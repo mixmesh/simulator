@@ -21,7 +21,7 @@ start_link() ->
 %% Exported: stop
 
 stop() ->
-    serv:call(stop).
+    serv:call(?MODULE, stop).
 
 %%
 %% Server

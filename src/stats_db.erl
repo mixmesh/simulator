@@ -87,7 +87,7 @@ dump() ->
 %% Exported: save
 
 save() ->
-    save(<<"/home/jocke/tmp/dump.dets">>).
+    save("/home/jocke/tmp/dump.dets").
 
 save(Filename) ->
     file:delete(Filename),
@@ -98,7 +98,7 @@ save(Filename) ->
 %% analyze
 
 analyze() ->
-    analyze(<<"/home/jocke/tmp/dump.dets">>).
+    analyze("/home/jocke/tmp/dump.dets").
 
 analyze(Filename) ->
     {ok, Name} = dets:open_file(Filename),

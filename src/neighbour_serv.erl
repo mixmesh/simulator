@@ -12,7 +12,7 @@
 
 -record(state,
         {parent             :: pid(),
-         players            :: [#player{}],
+         players            :: [{#player{}, [#player{}]}],
          neighbour_distance :: number()}).
 
 %% Exported: start_link
@@ -25,7 +25,7 @@ start_link() ->
 %% Exported: stop
 
 stop() ->
-    serv:call(stop).
+    serv:call(?MODULE, stop).
 
 %%
 %% Server

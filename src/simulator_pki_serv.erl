@@ -13,9 +13,9 @@
          db     :: ets:tid()}).
 
 -record(player,
-        {n    :: integer(),
+        {n    :: integer() | '_',
          name :: binary(),
-         keys :: {#pk{}, #sk{}}}).
+         keys :: {#pk{}, #sk{}} | '_' | '$1'}).
 
 %% Exported: start_link
 
@@ -27,7 +27,7 @@ start_link() ->
 % Exported: stop
 
 stop() ->
-    serv:call(stop).
+    serv:call(?MODULE, stop).
 
 %% Exported: generate_keys
 
@@ -37,22 +37,22 @@ generate_keys() ->
 %% Exported: get_keys
 
 get_keys(Name) ->
-    serv:call({get_keys, Name}).
+    serv:call(?MODULE, {get_keys, Name}).
 
 %% Exported: get_player
 
 get_player(Name) ->
-    serv:call({get_player, Name}).
+    serv:call(?MODULE, {get_player, Name}).
 
 %% Exported: get_random_player
 
 get_random_player(Name) ->
-    serv:call({get_random_player, Name}).
+    serv:call(?MODULE, {get_random_player, Name}).
 
 %% Exported: set_players
 
 set_players(Names) ->
-    serv:call({set_players, Names}).
+    serv:call(?MODULE, {set_players, Names}).
 
 %%
 %% Server
@@ -85,7 +85,7 @@ message_handler(#state{parent = Parent, db = Db}) ->
             end;
         {call, From, {get_random_player, Name}} ->
             Size = ets:info(Db, size),
-            K = rand:uniform(size) - 1,
+            K = rand:uniform(Size) - 1,
             case ets:lookup(Db, K) of
                 [#player{name = Name}] ->
                     N =

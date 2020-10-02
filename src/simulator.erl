@@ -97,9 +97,8 @@ generate_area(Index, ParseLine, KeepDb) ->
           Range
   end.
 
-load_all_players(_Index, _ParseLine, _Db, 0, Range) ->
-    Range;
-load_all_players([], _ParseLine, _Db, 0, Range) ->
+load_all_players(Index, _ParseLine, _Db, N, Range)
+  when N == 0 orelse Index == [] ->
     Range;
 load_all_players([{Name, Path}|Rest], ParseLine, Db, N, Range) ->
     io:format("Parsing ~s...\n", [Path]),

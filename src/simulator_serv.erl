@@ -45,7 +45,7 @@ start_link() ->
 %% Exported: stop
 
 stop() ->
-    serv:call(stop).
+    serv:call(?MODULE, stop).
 
 %% Exported: elect_source_and_target
 
@@ -56,12 +56,12 @@ elect_source_and_target(MessageId, SourceName, TargetName) ->
 %% Exported: get_players
 
 get_players() ->
-    serv:call(get_players).
+    serv:call(?MODULE, get_players).
 
 %% Exported: meters_to_degrees
 
 meters_to_degrees(Meters) ->
-    serv:call({meters_to_degrees, Meters}).
+    serv:call(?MODULE, {meters_to_degrees, Meters}).
 
 %% Exported: pause_player
 
@@ -305,8 +305,7 @@ get_player(Name, [_|Rest]) ->
 ping() ->
     spawn(fun() ->
                   Filename =
-                      filename:join(
-                        [code:priv_dir(simulator), <<"sharp.mp3">>]),
-                  os:cmd(?l2b([<<"play ">>, Filename]))
+                      filename:join([code:priv_dir(simulator), "sharp.mp3"]),
+                  os:cmd("play " ++ Filename)
           end),
     ok.
