@@ -1,0 +1,44 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+main([RootDir, N]) ->
+    PlayersDir = filename:join([RootDir, "obscrete", "players"]),
+    create_players(PlayersDir, list_to_integer(N));
+main(_) ->
+    io:format(standard_error, "Usage: mkconfigdirs <ROOT-DIR> <N>\n", []).
+
+create_players(_PlayersDir, 0) ->
+    ok;
+create_players(PlayersDir, N) ->
+    PlayerDir = filename:join([PlayersDir, "p" ++ integer_to_list(N)]),
+    TempDir = filename:join([PlayerDir, "temp"]),
+    ok = ensure_empty_lib(TempDir),
+    SpoolerDir = filename:join([PlayerDir, "maildrop", "spooler"]),
+    ok = ensure_empty_lib(SpoolerDir),
+    create_players(PlayersDir, N - 1).
+
+ensure_empty_lib(Dir) ->
+    io:format("Ensure ~s\n", [Dir]),
+    ok = filelib:ensure_dir(Dir),
+    make_dir(Dir).
+
+make_dir(Dir) ->
+    case file:make_dir(Dir) of
+        ok ->
+            erase_dir(Dir);
+        {error, eexist} ->
+            erase_dir(Dir);
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+erase_dir("/tmp" ++ _ = Dir) ->
+    {ok, Filenames} = file:list_dir(Dir),
+    lists:foreach(
+      fun(Filename) ->
+              io:format("Delete ~s\n", [filename:join([Dir, Filename])]),
+              file:delete(filename:join([Dir, Filename]))
+      end, Filenames),
+    ok;
+erase_dir(_Dir) ->
+    ok.
