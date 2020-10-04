@@ -47,16 +47,16 @@ To use any of these data sets the ./src/simulator_serv.erl (and more) have to be
 
 <dl>
   <dt>./src/simulator_app.erl</dt>
-  <dd>A simulator application module</dd>
+  <dd>A simulator application</dd>
   <dt>./src/simulator_sup.erl</dt>
-  <dd>A simulator top-level supervisor module</dd>
+  <dd>A simulator top-level supervisor</dd>
   <dt>./src/simulator_players_sup.erl</dt>
   <dd>A player supervisor which supervises a dynamic number of
-  ./player/src/player_sup.er supervisors (added dynamically by
+  ./player/src/player_sup.erl supervisors (added dynamically by
   simulator_serv.erl)</dd> 
   <dt>./src/neighbour_serv.erl</dt>
   <dd>A neighbour server which keeps track of how close players are to
-  each other. It uses the rstar repository to keep track of closeness.</dd>
+  each other. It uses the rstar repository to do this.</dd>
   <dt>./src/simulator_serv.erl</dt>
   <dd>See above</dd>
   <dt>./src/render_serv.erl</dt>
