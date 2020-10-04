@@ -25,7 +25,7 @@
 %% Exported: start
 
 start() ->
-    ok = application:start(simulator).
+    ok = application:ensure_all_started(simulator).
 
 %% Exported: initialize
 
