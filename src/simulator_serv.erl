@@ -289,7 +289,7 @@ elect_source_and_target(
               ?daemon_log(
                  "~s has been elected as new forwarder (~w)",
                  [Name, MessageId]);
-         (#player{name = Name}) ->
+         (#player{name = _Name}) ->
               ok
       end, Players),
     ok.
