@@ -1,0 +1,3 @@
+swaks --from p42@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16058 --auth LOGIN --auth-user p42 --auth-password baz --body "FOO"
+
+mpop --debug --host=127.0.0.1 --port=32092 --deliver=mbox,fnutt --keep=on --auth=user --user=p8 --passwordeval='echo "baz"'
