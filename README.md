@@ -12,7 +12,7 @@ exchange re-encrypted messages.
 
 ![A 1x1 km square area in Silicon Valley](https://github.com/obscrete/obscrete/blob/master/doc/simulation.gif?raw=true)
 
-The players are labeled p1-p100:XYX (where XYZ is the size of each
+The players are labeled p1-p100:XYZ (where XYZ is the size of each
 player's message buffer). In the animation above p42 sends an email to
 p8, i.e. the source player p42 is immediately recolored in red and
 the target player p8 in blue. p42 sends mails via its SMTP server
@@ -22,7 +22,7 @@ via its POP3 server running on 127.0.0.1:32092.
 The swaks and mpop utilities (found elsewhere) come in handy when
 working with sending/receiving of mails from a terminal.
 
-p42 adds 10 encrypted copies (as done in Spiridon 2017) of the new
+p42 adds 10 encrypted copies (as introduced by Spiridon 2017) of the new
 mail mail to its own message buffer and as soon as other intermediary
 players have one of these messages in their buffers they are recolored
 in yellow.
@@ -47,30 +47,30 @@ To use any of these data sets the ./src/simulator_serv.erl (and more) have to be
 
 <dl>
   <dt>./src/simulator_app.erl</dt>
-  <dd>Application module</dd>
+  <dd>A simulator application module</dd>
   <dt>./src/simulator_sup.erl</dt>
-  <dd>Top-level supervisor module</dd>
+  <dd>A simulator top-level supervisor module</dd>
   <dt>./src/simulator_players_sup.erl</dt>
-  <dd>Under this supervisor a number of `player_sup` supervisors are
-  added (resides in the player repository). They are added dynamically
-  by simulator_serv.erl.</dd>
+  <dd>A player supervisor which supervises a dynamic number of
+  ./player/src/player_sup.er supervisors (added dynamically by
+  simulator_serv.erl)</dd> 
   <dt>./src/neighbour_serv.erl</dt>
-  <dd>The neighbour server keeps track of how close players are to
-  each other. It uses the rstar repository to keep track of this.</dd>
+  <dd>A neighbour server which keeps track of how close players are to
+  each other. It uses the rstar repository to keep track of closeness.</dd>
   <dt>./src/simulator_serv.erl</dt>
   <dd>See above</dd>
   <dt>./src/render_serv.erl</dt>
-  <dd>The render server collects data and send it down to a NIF that
-  do the actual demo rendering on screen (using Simple2D).</dd>
+  <dd>A render server which collects data and send it down to a NIF that
+  do the actual demo rendering on screen, i.e. using Simple2D</dd>
   <dt>./src/simulator_pki_serv.erl</dt>
-  <dd>The simulator uses and extra PKI server to keep track of all
-  player instances</dd>
+  <dd>A simulator server which works as an extra PKI server keeping
+  track of all player instances</dd>
   <dt>./src/simulator.erl</dt>
-  <dd>Utility module which contains a marshalling API on top of
-  function in simulator_nif.erl but also house a number of GPS
-  specific helper functions.</dd>
+  <dd>A helper module which contains a marshalling API on top of
+  functionality in simulator_nif.erl, but also house a number of GPS
+  specific utility functions</dd>
   <dt>./src/simulator_config.erl</dd>
-  <dd>Helper module to simualtor_serv.erl</dd>
+  <dd>A helper module to simualtor_serv.erl</dd>
 
 player_db.erl and stats_db.erl wraps public ETS tables which the
 simulator relies upon to gain a global view of each player's state.
