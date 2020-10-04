@@ -47,9 +47,9 @@ To use any of these data sets the ./src/simulator_serv.erl (and more) have to be
 
 <dl>
   <dt>./src/simulator_app.erl</dt>
-  <dd>A simulator application</dd>
+  <dd>The simulator application module</dd>
   <dt>./src/simulator_sup.erl</dt>
-  <dd>A simulator top-level supervisor</dd>
+  <dd>The top-level supervisor</dd>
   <dt>./src/simulator_players_sup.erl</dt>
   <dd>A player supervisor which supervises a dynamic number of
   ./player/src/player_sup.erl supervisors (added dynamically by
