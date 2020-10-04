@@ -27,4 +27,4 @@
                 simulator_sup,
                 simulator_serv]},
   {mod, {simulator_app, []}},
-  {applications, [kernel, stdlib, sasl, pki, player]}]}.
+  {applications, [kernel, stdlib, sasl, pki]}]}.

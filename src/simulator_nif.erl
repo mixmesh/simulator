@@ -5,7 +5,8 @@
 %% Exported: init
 
 init() ->
-    ok = erlang:load_nif(filename:join(code:priv_dir(simulator), ?MODULE), none).
+    ok = erlang:load_nif(
+           filename:join(code:priv_dir(simulator), ?MODULE), none).
 
 %% Exported: add_players
 

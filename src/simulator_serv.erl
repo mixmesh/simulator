@@ -100,9 +100,7 @@ target_received_message(TargetName, SourceName) ->
 %%
 
 init(Parent) ->
-    %% Intialize random number generator
-    <<I1:32, I2:32, I3:32>> = crypto:strong_rand_bytes(12),
-    rand:seed(exsplus, {I1, I2, I3}),
+    rand:seed(exsss),
     %% Intialize simulator
     Area = ?SIMULATOR_MODULE:get_area(),
     {MinX, MaxX, MinY, MaxY} = Area,
@@ -288,9 +286,10 @@ elect_source_and_target(
             when Name /= SourceName andalso Name /= TargetName ->
               ok = player_serv:become_forwarder(
                      ForwarderPlayerServPid, MessageId),
-              ?daemon_log("~s has been elected as new forwarder (~w)",
-                          [Name, MessageId]);
-         (_) ->
+              ?daemon_log(
+                 "~s has been elected as new forwarder (~w)",
+                 [Name, MessageId]);
+         (#player{name = Name}) ->
               ok
       end, Players),
     ok.

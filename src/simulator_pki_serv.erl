@@ -59,8 +59,7 @@ set_players(Names) ->
 %%
 
 init(Parent) ->
-    <<I1:32, I2:32, I3:32>> = crypto:strong_rand_bytes(12),
-    rand:seed(exsplus, {I1, I2, I3}),
+    rand:seed(exsss),
     Db = ets:new(db, [ordered_set, {keypos, #player.n}]),
     ?daemon_tag_log(system, "PKI server has been started", []),
     {ok, #state{parent = Parent, db = Db}}.

@@ -6,8 +6,9 @@
 %% Exported: new
 
 new() ->
-    ?MODULE == ets:new(?MODULE, [public, named_table, {keypos, #db_player.name},
-                                 {write_concurrency, true}]).
+    ?MODULE == ets:new(?MODULE,
+                       [public, named_table, {keypos, #db_player.name},
+                        {write_concurrency, true}]).
 
 %% Exported: lookup
 

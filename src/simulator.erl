@@ -25,9 +25,6 @@
 %% Exported: start
 
 start() ->
-    ok = application:start(sasl),
-    ok = application:start(obscrete),
-    ok = application:start(pki),
     ok = application:start(simulator).
 
 %% Exported: initialize
