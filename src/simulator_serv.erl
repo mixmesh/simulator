@@ -2,6 +2,7 @@
 -export([start_link/0, stop/0]).
 -export([elect_source_and_target/3]).
 -export([get_players/0]).
+-export([get_random_player/1]).
 -export([meters_to_degrees/1]).
 -export([pause_player/0, pause_player/1]).
 -export([resume_player/0, resume_player/1]).
@@ -58,6 +59,11 @@ elect_source_and_target(MessageId, SourceName, TargetName) ->
 
 get_players() ->
     serv:call(?MODULE, get_players).
+
+%% Exported: get_random_player
+
+get_random_player(Name) ->
+    serv:call(?MODULE, {get_random_player, Name}).
 
 %% Exported: meters_to_degrees
 
@@ -120,7 +126,6 @@ init(Parent) ->
           fun({Name, _Opaque}) ->
                   Name
           end, LocationIndex),
-    ok = simulator_pki_serv:set_players(Names),
     %% Start simulated players
     {_, _, _, AllPlayers} =
         lists:foldl(
@@ -204,6 +209,8 @@ message_handler(#state{parent = Parent,
             noreply;
         {call, From, get_players} ->
             {reply, From, Players};
+        {call, From, {get_random_player, Name}} ->
+            {reply, From, get_random_player(Name, Players)};
         {call, From, {meters_to_degrees, Meters}} ->
             {reply, From, MetersToDegrees(Meters)};
         {cast, pause_player} ->
@@ -303,6 +310,15 @@ elect_source_and_target(
               ok
       end, Players),
     ok.
+
+get_random_player(Name, Players) ->
+    N = rand:uniform(length(Players)),
+    case lists:nth(N, Players) of
+        #player{name = Name} ->
+            get_random_player(Name, Players);
+        Player ->
+            Player
+    end.
 
 get_player(_Name, []) ->
     not_found;

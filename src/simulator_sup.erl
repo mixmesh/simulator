@@ -11,9 +11,6 @@ start_link() ->
 %% Exported: init
 
 init([]) ->
-    SimulatorPkiServSpec =
-        #{id => simulator_pki_serv,
-          start => {simulator_pki_serv, start_link, []}},
     SimulatorPlayersSupSpec =
         #{id => simulator_players_sup,
           start => {simulator_players_sup, start_link, []},
@@ -27,8 +24,7 @@ init([]) ->
     RenderServSpec =
         #{id => render_serv,
           start => {render_serv, start_link, []}},
-    {ok, {#{strategy => one_for_one}, [SimulatorPkiServSpec,
-                                       SimulatorPlayersSupSpec,
+    {ok, {#{strategy => one_for_one}, [SimulatorPlayersSupSpec,
                                        SimulatorServSpec,
                                        NeighbourServSpec,
                                        RenderServSpec]}}.
