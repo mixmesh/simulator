@@ -4,6 +4,8 @@
 -export([init/1]).
 
 %% Exported: start_link
+-define(RENDER, render_serv).
+%% -define(RENDER, render_epx).
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
@@ -23,7 +25,7 @@ init([]) ->
           start => {neighbour_serv, start_link, []}},
     RenderServSpec =
         #{id => render_serv,
-          start => {render_serv, start_link, []}},
+          start => {?RENDER, start_link, []}},
     {ok, {#{strategy => one_for_one}, [SimulatorPlayersSupSpec,
                                        SimulatorServSpec,
                                        NeighbourServSpec,
