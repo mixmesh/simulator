@@ -61,7 +61,7 @@ set_players(Names) ->
 init(Parent) ->
     rand:seed(exsss),
     Db = ets:new(db, [ordered_set, {keypos, #player.n}]),
-    ?daemon_tag_log(system, "PKI server has been started", []),
+    ?daemon_tag_log(system, "Simulated PKI server has been started", []),
     {ok, #state{parent = Parent, db = Db}}.
 
 message_handler(#state{parent = Parent, db = Db}) ->
