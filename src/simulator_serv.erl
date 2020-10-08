@@ -111,11 +111,11 @@ get_player_names([{{_SyncIpAddress, SyncPort}, _Pid}|Rest]) ->
 init(Parent) ->
     rand:seed(exsss),
     %% Intialize simulator
-    Area = ?SIMULATOR_MODULE:get_area(),
-    {MinX, MaxX, MinY, MaxY} = Area,
+    %% Area = ?SIMULATOR_MODULE:get_area(),
+    %% {MinX, MaxX, MinY, MaxY} = Area,
     MetersToDegrees = fun ?SIMULATOR_MODULE:meters_to_degrees/1,
-    NeighbourDistance = MetersToDegrees(?NEIGHBOUR_DISTANCE_IN_METERS),
-    ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
+    %% NeighbourDistance = MetersToDegrees(?NEIGHBOUR_DISTANCE_IN_METERS),
+    %% ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
     %% Initialize simulator databases
     true = player_db:new(),
     true = stats_db:new(),
