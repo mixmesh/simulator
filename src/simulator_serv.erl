@@ -110,7 +110,7 @@ init(Parent) ->
     MetersToDegrees = fun ?SIMULATOR_MODULE:meters_to_degrees/1,
     NeighbourDistance = MetersToDegrees(?NEIGHBOUR_DISTANCE_IN_METERS),
     ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
-    %% Initialize databases
+    %% Initialize simulator databases
     true = player_db:new(),
     true = stats_db:new(),
     %% Initialize simulated PKI server
@@ -121,7 +121,7 @@ init(Parent) ->
                   Name
           end, LocationIndex),
     ok = simulator_pki_serv:set_players(Names),
-    %% Start players
+    %% Start simulated players
     {_, _, _, AllPlayers} =
         lists:foldl(
           fun({Name, Opaque}, {SyncPort, SmtpPort, Pop3Port, Players}) ->
@@ -133,6 +133,8 @@ init(Parent) ->
                   PlayerDir =
                       filename:join(["/tmp/obscrete/players", Name, "player"]),
                   TempDir = filename:join([PlayerDir, "temp"]),
+                  Keys = elgamal:generate_key_pair(
+                           Name, binary:decode_unsigned(Name)),
                   MaildropSpoolerDir =
                       filename:join([PlayerDir, "maildrop", "spooler"]),
                   PkiDataDir = filename:join([PlayerDir, "pki", "data"]),
@@ -140,7 +142,7 @@ init(Parent) ->
                       supervisor:start_child(
                         simulator_players_sup,
                         [Name, <<"baz">>, ?SYNC_IP_ADDRESS, SyncPort, TempDir,
-                         ?F, GetLocationGenerator, DegreesToMeters,
+                         Keys, ?F, GetLocationGenerator, DegreesToMeters,
                          ?SMTP_IP_ADDRESS, SmtpPort, MaildropSpoolerDir,
                          ?POP3_IP_ADDRESS, Pop3Port, PkiDataDir]),
                   {ok, PlayerServPid} =
@@ -185,7 +187,7 @@ pick_random_source(Players) ->
 pick_random_source(_Players) ->
     ok.
 -endif.
-        
+
 message_handler(#state{parent = Parent,
                        players = Players,
                        meters_to_degrees = MetersToDegrees}) ->
