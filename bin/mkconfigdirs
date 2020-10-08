@@ -1,44 +1,56 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
 
-main([RootDir, N]) ->
-    PlayersDir = filename:join([RootDir, "obscrete", "players"]),
+main([ObscreteDir, N]) ->
+    PkiDataDir = filename:join([ObscreteDir, <<"pki">>, <<"data">>]),
+    ok = ensure_libs([PkiDataDir], false),
+    PlayersDir = filename:join([ObscreteDir, "players"]),
     create_players(PlayersDir, list_to_integer(N));
 main(_) ->
-    io:format(standard_error, "Usage: mkconfigdirs <ROOT-DIR> <N>\n", []).
+    io:format(standard_error, "Usage: mkconfigdirs <OBSCRETE-DIR> <N>\n", []).
 
 create_players(_PlayersDir, 0) ->
     ok;
 create_players(PlayersDir, N) ->
-    PlayerDir = filename:join([PlayersDir, "p" ++ integer_to_list(N)]),
-    TempDir = filename:join([PlayerDir, "temp"]),
-    ok = ensure_empty_lib(TempDir),
-    SpoolerDir = filename:join([PlayerDir, "maildrop", "spooler"]),
-    ok = ensure_empty_lib(SpoolerDir),
+    PlayerDir = filename:join(
+                  [PlayersDir, "p" ++ integer_to_list(N), <<"player">>]),
+    PlayerTempDir = filename:join([PlayerDir, "temp"]),
+    PlayerPkiDataDir = filename:join([PlayerDir, "pki", "data"]),
+    PlayerMaildropSpoolerDir =
+        filename:join([PlayerDir, "maildrop", "spooler"]),
+    ensure_libs([PlayerTempDir, PlayerPkiDataDir, PlayerMaildropSpoolerDir],
+                true),
     create_players(PlayersDir, N - 1).
 
-ensure_empty_lib(Dir) ->
-    io:format("Ensure ~s\n", [Dir]),
-    ok = filelib:ensure_dir(Dir),
-    make_dir(Dir).
 
-make_dir(Dir) ->
-    case file:make_dir(Dir) of
+ensure_libs([], _Erase) ->
+    ok;
+ensure_libs([Dir|Rest], Erase) ->
+    io:format("Ensure ~s\n", [Dir]),
+    case filelib:ensure_dir(Dir) of
         ok ->
-            erase_dir(Dir);
-        {error, eexist} ->
-            erase_dir(Dir);
+            case file:make_dir(Dir) of
+                ok ->
+                    ensure_libs(Rest, Erase);
+                {error, eexist} when Erase ->
+                    ok = erase_dir(Dir),
+                    ensure_libs(Rest, Erase);
+                {error, eexist} ->
+                    ensure_libs(Rest, Erase);
+                {error, Reason} ->
+                    io:format(standard_error, "~s: ~s\n",
+                              [Dir, file:format_error(Reason)])
+            end;
         {error, Reason} ->
-            {error, Reason}
+            io:format(standard_error, "~s: ~s\n",
+                      [Dir, file:format_error(Reason)])
     end.
 
-erase_dir("/tmp" ++ _ = Dir) ->
+erase_dir(Dir) ->
     {ok, Filenames} = file:list_dir(Dir),
     lists:foreach(
       fun(Filename) ->
               io:format("Delete ~s\n", [filename:join([Dir, Filename])]),
               file:delete(filename:join([Dir, Filename]))
       end, Filenames),
-    ok;
-erase_dir(_Dir) ->
     ok.

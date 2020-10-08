@@ -89,7 +89,8 @@ inform_players(_Tree, [], _NeighbourDistance) ->
     [];
 inform_players(Tree, 
                [{#player{name = Name,
-                         player_serv_pid = PlayerServPid} = Player,
+                         player_serv_pid = PlayerServPid,
+                         nodis_serv_pid = NodisServPid} = Player,
                  OldNeighbours}|Rest],
                NeighbourDistance) ->
     case get_neighbours(Tree, NeighbourDistance, Name) of
@@ -97,7 +98,13 @@ inform_players(Tree,
             [{Player, OldNeighbours}|
              inform_players(Tree, Rest, NeighbourDistance)];
         NewNeighbours ->
-            player_serv:update_neighbours(PlayerServPid, NewNeighbours),
+            lists:foreach(
+              fun(#player{sync_ip_address = SyncIpAddress,
+                          sync_port = SyncPort}) ->
+                      ok = nodis_srv:simping(
+                             NodisServPid, SyncIpAddress, SyncPort,
+                             ?UPDATE_TIME)
+              end, NewNeighbours),
             [{Player, NewNeighbours}|
              inform_players(Tree, Rest, NeighbourDistance)]
     end.

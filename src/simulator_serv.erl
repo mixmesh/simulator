@@ -7,6 +7,7 @@
 -export([resume_player/0, resume_player/1]).
 -export([stop_generating_mails/0]).
 -export([target_received_message/2]).
+-export([get_player_names/1]).
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
@@ -19,13 +20,13 @@
 
 -define(STOP_GENERATING_MAIL_TIME, trunc(?SIMULATION_TIME / 2)).
 
--define(SYNC_ADDRESS, {127, 0, 0, 1}).
+-define(SYNC_IP_ADDRESS, {127, 0, 0, 1}).
 -define(SYNC_PORT, 4000).
 
--define(SMTP_ADDRESS, {127, 0, 0, 1}).
+-define(SMTP_IP_ADDRESS, {127, 0, 0, 1}).
 -define(SMTP_PORT, 16000).
 
--define(POP3_ADDRESS, {127, 0, 0, 1}).
+-define(POP3_IP_ADDRESS, {127, 0, 0, 1}).
 -define(POP3_PORT, 32000).
 
 -define(PICK_RANDOM_SOURCE, false).
@@ -50,8 +51,8 @@ stop() ->
 %% Exported: elect_source_and_target
 
 elect_source_and_target(MessageId, SourceName, TargetName) ->
-    ?MODULE ! {elect_source_and_target, MessageId, SourceName, TargetName},
-    ok.
+    serv:cast(?MODULE,
+              {elect_source_and_target, MessageId, SourceName, TargetName}).
 
 %% Exported: get_players
 
@@ -66,34 +67,36 @@ meters_to_degrees(Meters) ->
 %% Exported: pause_player
 
 pause_player() ->
-    ?MODULE ! pause_player,
-    ok.
+    serv:cast(?MODULE, pause_player).
 
 pause_player(Name) ->
-    ?MODULE ! {pause_player, Name},
-    ok.
+    serv:cast(?MODULE, {pause_player, Name}).
 
 %% Exported: resume_player
 
 resume_player() ->
-    ?MODULE ! resume_player,
-    ok.
+    serv:cast(?MODULE, resume_player).
 
 resume_player(Name) ->
-    ?MODULE ! {resume_player, Name},
-    ok.
+    serv:cast(?MODULE, {resume_player, Name}).
 
 %% Exported: stop_generating_mails
 
 stop_generating_mails() ->
-    ?MODULE ! stop_generating_mails,
-    ok.
+    serv:cast(?MODULE, stop_generating_mails).
 
 %% Exported: target_received_message
 
 target_received_message(TargetName, SourceName) ->
-    ?MODULE ! {target_received_message, TargetName, SourceName},
-    ok.
+    serv:cast(?MODULE, {target_received_message, TargetName, SourceName}).
+
+%% Exported: get_player_names
+
+get_player_names([]) ->
+    [];
+get_player_names([{{_SyncIpAddress, SyncPort}, _Pid}|Rest]) ->
+    Name = ?l2b([<<"p">>, ?i2b(?SYNC_PORT - SyncPort + 100)]),
+    [Name|get_player_names(Rest)].
 
 %%
 %% Server
@@ -110,7 +113,7 @@ init(Parent) ->
     %% Initialize databases
     true = player_db:new(),
     true = stats_db:new(),
-    %% Initialize PKI server
+    %% Initialize simulated PKI server
     LocationIndex = ?SIMULATOR_MODULE:get_location_index(),
     Names =
         lists:map(
@@ -127,27 +130,32 @@ init(Parent) ->
                               ?SIMULATOR_MODULE:get_location_generator(Opaque)
                       end,
                   DegreesToMeters = fun ?SIMULATOR_MODULE:degrees_to_meters/1,
-                  SpoolerDir =
-                      filename:join([<<"/tmp/obscrete/players">>, Name,
-                                     <<"maildrop/spooler">>]),
-                  TempDir = filename:join([<<"/tmp/obscrete/players">>, Name,
-                                           <<"temp">>]),
+                  PlayerDir =
+                      filename:join(["/tmp/obscrete/players", Name, "player"]),
+                  TempDir = filename:join([PlayerDir, "temp"]),
+                  MaildropSpoolerDir =
+                      filename:join([PlayerDir, "maildrop", "spooler"]),
+                  PkiDataDir = filename:join([PlayerDir, "pki", "data"]),
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
-                        [Name, <<"baz">>, ?SYNC_ADDRESS, SyncPort, TempDir, ?F,
-                         GetLocationGenerator, DegreesToMeters, ?SMTP_ADDRESS,
-                         SmtpPort, SpoolerDir, ?POP3_ADDRESS, Pop3Port]),
+                        [Name, <<"baz">>, ?SYNC_IP_ADDRESS, SyncPort, TempDir,
+                         ?F, GetLocationGenerator, DegreesToMeters,
+                         ?SMTP_IP_ADDRESS, SmtpPort, MaildropSpoolerDir,
+                         ?POP3_IP_ADDRESS, Pop3Port, PkiDataDir]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
+                  {ok, NodisServPid} =
+                      get_child_pid(PlayerSupPid, nodis_serv),
                   %%ok = player_serv:add_dummy_messages(
                   %%       player_serv_pid, rand:uniform(50)),
                   {SyncPort + 1, SmtpPort + 1, Pop3Port + 1,
                    [#player{name = Name,
                             player_serv_pid = PlayerServPid,
-                            sync_address = ?SYNC_ADDRESS,
+                            nodis_serv_pid = NodisServPid,
+                            sync_ip_address = ?SYNC_IP_ADDRESS,
                             sync_port = SyncPort,
-                            smtp_address = ?SMTP_ADDRESS,
+                            smtp_ip_address = ?SMTP_IP_ADDRESS,
                             smtp_port = SmtpPort}|Players]}
           end, {?SYNC_PORT, ?SMTP_PORT, ?POP3_PORT, []}, LocationIndex),
     ok = pick_random_source(AllPlayers),
@@ -184,7 +192,7 @@ message_handler(#state{parent = Parent,
     receive
         {call, From, stop} ->
             {stop, From, ok};
-        {elect_source_and_target, MessageId, SourceName, TargetName} ->
+        {cast, {elect_source_and_target, MessageId, SourceName, TargetName}} ->
             {value, SourcePlayer} =
                 lists:keysearch(SourceName, #player.name, Players),
             {value, TargetPlayer} =
@@ -196,12 +204,12 @@ message_handler(#state{parent = Parent,
             {reply, From, Players};
         {call, From, {meters_to_degrees, Meters}} ->
             {reply, From, MetersToDegrees(Meters)};
-        pause_player ->
+        {cast, pause_player} ->
             lists:foreach(fun(#player{player_serv_pid = PlayerServPid}) ->
                                   player_serv:pause(PlayerServPid)
                           end, Players),
             noreply;
-        {pause_player, Name} ->
+        {cast, {pause_player, Name}} ->
             case get_player(Name, Players) of
                 {found, #player{player_serv_pid = PlayerServPid}} ->
                     player_serv:pause(PlayerServPid),
@@ -209,12 +217,12 @@ message_handler(#state{parent = Parent,
                 not_found ->
                     noreply
             end;
-        resume_player ->
+        {cast, resume_player} ->
             lists:foreach(fun(#player{player_serv_pid = PlayerServPid}) ->
                                   player_serv:resume(PlayerServPid)
                           end, Players),
             noreply;
-        {resume_player, Name} ->
+        {cast, {resume_player, Name}} ->
             case get_player(Name, Players) of
                 {found, #player{player_serv_pid = PlayerServPid}} ->
                     player_serv:resume(PlayerServPid),
@@ -222,14 +230,14 @@ message_handler(#state{parent = Parent,
                 not_found ->
                     noreply
             end;
-        stop_generating_mail ->
+        {cast, stop_generating_mail} ->
             lists:foreach(
               fun(#player{player_serv_pid = PlayerServPid}) ->
                       player_serv:stop_generating_mail(PlayerServPid)
               end, Players),
             ?daemon_tag_log(system, "No more mails are generated", []),
             noreply;
-        {target_received_message, TargetName, SourceName} ->
+        {cast, {target_received_message, TargetName, SourceName}} ->
             ok = ping(),
             ?daemon_tag_log(system, "Target received message", []),
             {found, #player{player_serv_pid = TargetPlayerServPid}} =
