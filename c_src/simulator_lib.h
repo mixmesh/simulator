@@ -17,7 +17,7 @@
 #define SKIP_TICKS 1000 / TICKS_PER_SECOND
 #define SCALE_JUMP 0.2
 #define MAX_SCALING 100
-#define MAX_PLAYERS 1024
+#define MAX_PLAYERS 10000
 
 #define MAX_BUFFER_MESSAGES 1000
 
@@ -48,7 +48,7 @@ typedef struct {
   bool is_set1;
   // Current neighbours
   int number_of_neighbours;
-  int neighbours[128];
+  int neighbours[1024];
   // Label
   S2D_Text *label;
   // Buffer size

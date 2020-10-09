@@ -1,6 +1,0 @@
--ifndef(NEIGHBOUR_SERV_HRL).
--define(NEIGHBOUR_SERV_HRL, true).
-
--define(NEIGHBOUR_DISTANCE_IN_METERS, 75).
-
--endif.

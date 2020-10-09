@@ -200,7 +200,7 @@ void make_label(uplayer_t *up0, rplayer_t *rp0) {
         set_predefined_color(&up0->label->color, FOREGROUND_COLOR);
         break;
       case IS_FORWARDER:
-        set_predefined_color(&up0->label->color, ACCENT_COLOR2);            
+        set_predefined_color(&up0->label->color, ACCENT_COLOR2);
         break;
       case IS_SOURCE:
         set_predefined_color(&up0->label->color, ACCENT_COLOR1);
@@ -306,6 +306,9 @@ void render() {
       rp[i].pick_mode = up[i]->pick_mode;
 
       //draw_player(rp[i].x, rp[i].y);
+    } else {
+      make_label(up[i], &rp[i]);
+      draw_label(up[i]->label, rp[i].x, rp[i].y);
     }
   }
 

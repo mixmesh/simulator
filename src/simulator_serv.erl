@@ -14,7 +14,6 @@
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("player/include/player_serv.hrl").
--include("neighbour_serv.hrl").
 
 -define(SIMULATION_TIME, (1000 * 60 * 60 * 10)).
 
@@ -111,7 +110,9 @@ init(Parent) ->
     Area = SimulatorModule:get_area(),
     {MinX, MaxX, MinY, MaxY} = Area,
     MetersToDegrees = fun SimulatorModule:meters_to_degrees/1,
-    NeighbourDistance = MetersToDegrees(?NEIGHBOUR_DISTANCE_IN_METERS),
+    NeighbourDistance =
+        MetersToDegrees(
+          SimulatorModule:neighbour_distance_in_meters()),
     ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
     %% Initialize simulator databases
     true = player_db:new(),

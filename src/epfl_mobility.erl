@@ -2,6 +2,7 @@
 -export([get_area/0, generate_area/0]).
 -export([get_location_generator/1, get_location_index/0,
          read_location_index/0]).
+-export([neighbour_distance_in_meters/0]).
 -export([degrees_to_meters/1, meters_to_degrees/1]).
 -export([width_height_in_meters/0]).
 -export([zscoring/0]).
@@ -88,6 +89,11 @@ read_location_index(DataDir, File) ->
                        ?l2b([<<"new_">>, Name, <<".txt">>])])}|
              read_location_index(DataDir, File)]
     end.
+
+%% Exported: neighbour_distance_in_meters
+
+neighbour_distance_in_meters() ->
+    250.
 
 %% Exported: degrees_to_meters
 

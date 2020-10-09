@@ -6,7 +6,6 @@
 -include_lib("player/include/player_serv.hrl").
 -include_lib("simulator/include/player_db.hrl").
 -include_lib("rstar/include/rstar.hrl").
--include("neighbour_serv.hrl").
 
 -define(UPDATE_TIME, 500).
 
@@ -35,9 +34,10 @@ init(Parent) ->
     Players = lists:map(fun(Player) ->
                                 {Player, []}
                         end, simulator_serv:get_players()),
+    SimulatorModule = config:lookup([simulator, 'data-set']),
     NeighbourDistance =
-        simulator_serv:meters_to_degrees(?NEIGHBOUR_DISTANCE_IN_METERS),
-    %%?dbg_log({neighbour_distance, NeighbourDistance}),
+        simulator_serv:meters_to_degrees(
+          SimulatorModule:neighbour_distance_in_meters()),
     self() ! update,
     ?daemon_tag_log(system, "Neighbour server has been started", []),
     {ok, #state{parent = Parent,
@@ -89,22 +89,16 @@ inform_players(_Tree, [], _NeighbourDistance) ->
     [];
 inform_players(Tree,
                [{#player{name = Name, nodis_serv_pid = NodisServPid} = Player,
-                 OldNeighbours}|Rest],
+                 _OldNeighbours}|Rest],
                NeighbourDistance) ->
-    case get_neighbours(Tree, NeighbourDistance, Name) of
-        OldNeighbours ->
-            [{Player, OldNeighbours}|
-             inform_players(Tree, Rest, NeighbourDistance)];
-        NewNeighbours ->
-            lists:foreach(
-              fun(#player{sync_address = {SyncIpAddress, SyncPort}}) ->
-                      ok = nodis_srv:simping(
-                             NodisServPid, SyncIpAddress, SyncPort,
-                             ?UPDATE_TIME)
-              end, NewNeighbours),
-            [{Player, NewNeighbours}|
-             inform_players(Tree, Rest, NeighbourDistance)]
-    end.
+    NewNeighbours = get_neighbours(Tree, NeighbourDistance, Name),
+    lists:foreach(
+      fun(#player{sync_address = {SyncIpAddress, SyncPort}}) ->
+              ok = nodis_srv:simping(
+                     NodisServPid, SyncIpAddress, SyncPort,
+                     ?UPDATE_TIME)
+      end, NewNeighbours),
+    [{Player, NewNeighbours}|inform_players(Tree, Rest, NeighbourDistance)].
 
 get_neighbours(Tree, NeighbourDistance, Name) ->
     case player_db:lookup(Name) of

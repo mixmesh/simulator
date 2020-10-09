@@ -1,6 +1,7 @@
 -module(dummy_circle).
 -export([get_area/0]).
 -export([get_location_index/0, get_location_generator/1]).
+-export([neighbour_distance_in_meters/0]).
 -export([meters_to_degrees/1]).
 
 -define(WIDTH, 20000).
@@ -25,9 +26,6 @@ get_location_index() ->
      {<<"Dan">>, {Pi2 * 20, Pi2 / 12, 0, 2, 2500, {5000, -5000}, 0}},
      {<<"Erin">>, {Pi2 * 20, Pi2 / 16, 0, 2, 5000, {0, 0}, 0}}].
 
-
-
-
 %% Exported: get_location_generator
 
 get_location_generator({MaxAngle, DeltaAngle, Timestamp, TimeStep,
@@ -48,6 +46,11 @@ get_location_generator({MaxAngle, DeltaAngle, Timestamp, TimeStep,
                         Origo, NextAngle})}
             end
     end.
+
+%% Exported: neighbour_distance_in_meters
+
+neighbour_distance_in_meters() ->
+    50.
 
 %% Exported: meters_to_degrees
 

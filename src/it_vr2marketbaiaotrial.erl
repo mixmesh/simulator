@@ -1,6 +1,7 @@
 -module(it_vr2marketbaiaotrial).
 -export([get_area/0, generate_area/0]).
 -export([get_location_generator/1, get_location_index/0]).
+-export([neighbour_distance_in_meters/0]).
 -export([degrees_to_meters/1, meters_to_degrees/1]).
 -export([width_height_in_meters/0]).
 
@@ -60,6 +61,11 @@ get_location_index(Names) ->
                  <<"it_vr2marketbaiaotrial">>,
                  ?l2b([<<"data">>, Name, <<".txt">>])])
       end).
+
+%% Exported: neighbour_distance_in_meters
+
+neighbour_distance_in_meters() ->
+    25.
 
 %% Exported: degrees_to_meters
 
