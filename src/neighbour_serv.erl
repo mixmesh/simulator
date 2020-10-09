@@ -87,10 +87,8 @@ build_rstar_tree(Tree, [{#player{name = Name} = Player, _Neighbours}|Rest]) ->
 
 inform_players(_Tree, [], _NeighbourDistance) ->
     [];
-inform_players(Tree, 
-               [{#player{name = Name,
-                         player_serv_pid = PlayerServPid,
-                         nodis_serv_pid = NodisServPid} = Player,
+inform_players(Tree,
+               [{#player{name = Name, nodis_serv_pid = NodisServPid} = Player,
                  OldNeighbours}|Rest],
                NeighbourDistance) ->
     case get_neighbours(Tree, NeighbourDistance, Name) of
@@ -99,8 +97,7 @@ inform_players(Tree,
              inform_players(Tree, Rest, NeighbourDistance)];
         NewNeighbours ->
             lists:foreach(
-              fun(#player{sync_ip_address = SyncIpAddress,
-                          sync_port = SyncPort}) ->
+              fun(#player{sync_address = {SyncIpAddress, SyncPort}}) ->
                       ok = nodis_srv:simping(
                              NodisServPid, SyncIpAddress, SyncPort,
                              ?UPDATE_TIME)

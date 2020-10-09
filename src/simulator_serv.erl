@@ -2,13 +2,13 @@
 -export([start_link/0, stop/0]).
 -export([elect_source_and_target/3]).
 -export([get_players/0]).
+-export([get_player_names/1]).
 -export([get_random_player/1]).
 -export([meters_to_degrees/1]).
 -export([pause_player/0, pause_player/1]).
 -export([resume_player/0, resume_player/1]).
 -export([stop_generating_mails/0]).
 -export([target_received_message/2]).
--export([get_player_names/1]).
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
@@ -59,6 +59,11 @@ elect_source_and_target(MessageId, SourceName, TargetName) ->
 get_players() ->
     serv:call(?MODULE, get_players).
 
+%% Exported: get_player_names
+
+get_player_names(SyncAddresses) ->
+    serv:call(?MODULE, {get_player_names, SyncAddresses}).
+
 %% Exported: get_random_player
 
 get_random_player(Name) ->
@@ -95,14 +100,6 @@ stop_generating_mails() ->
 target_received_message(TargetName, SourceName) ->
     serv:cast(?MODULE, {target_received_message, TargetName, SourceName}).
 
-%% Exported: get_player_names
-
-get_player_names([]) ->
-    [];
-get_player_names([{{_SyncIpAddress, SyncPort}, _Pid}|Rest]) ->
-    Name = ?l2b([<<"p">>, ?i2b(?SYNC_PORT - SyncPort + 100)]),
-    [Name|get_player_names(Rest)].
-
 %%
 %% Server
 %%
@@ -121,11 +118,6 @@ init(Parent) ->
     true = stats_db:new(),
     %% Initialize simulated PKI server
     LocationIndex = SimulatorModule:get_location_index(),
-    Names =
-        lists:map(
-          fun({Name, _Opaque}) ->
-                  Name
-          end, LocationIndex),
     %% Start simulated players
     {_, _, _, AllPlayers} =
         lists:foldl(
@@ -146,10 +138,10 @@ init(Parent) ->
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
-                        [Name, <<"baz">>, ?SYNC_IP_ADDRESS, SyncPort, TempDir,
+                        [Name, <<"baz">>, {?SYNC_IP_ADDRESS, SyncPort}, TempDir,
                          Keys, ?F, GetLocationGenerator, DegreesToMeters,
-                         ?SMTP_IP_ADDRESS, SmtpPort, MaildropSpoolerDir,
-                         ?POP3_IP_ADDRESS, Pop3Port, PkiDataDir]),
+                         {?SMTP_IP_ADDRESS, SmtpPort}, MaildropSpoolerDir,
+                         {?POP3_IP_ADDRESS, Pop3Port}, PkiDataDir]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =
@@ -160,10 +152,9 @@ init(Parent) ->
                    [#player{name = Name,
                             player_serv_pid = PlayerServPid,
                             nodis_serv_pid = NodisServPid,
-                            sync_ip_address = ?SYNC_IP_ADDRESS,
-                            sync_port = SyncPort,
-                            smtp_ip_address = ?SMTP_IP_ADDRESS,
-                            smtp_port = SmtpPort}|Players]}
+                            sync_address = {?SYNC_IP_ADDRESS, SyncPort},
+                            smtp_address = {?SMTP_IP_ADDRESS, SmtpPort}}|
+                    Players]}
           end, {?SYNC_PORT, ?SMTP_PORT, ?POP3_PORT, []}, LocationIndex),
     ok = pick_random_source(AllPlayers),
     %% Order players to start location updating
@@ -209,6 +200,16 @@ message_handler(#state{parent = Parent,
             noreply;
         {call, From, get_players} ->
             {reply, From, Players};
+        {call, From, {get_player_names, SyncAddresses}} ->
+            Names =
+                lists:map(
+                  fun(SyncAddress) ->
+                          {value, #player{name = Name}} =
+                              lists:keysearch(
+                                SyncAddress, #player.sync_address, Players),
+                          Name
+                  end, SyncAddresses),
+            {reply, From, Names};
         {call, From, {get_random_player, Name}} ->
             {reply, From, get_random_player(Name, Players)};
         {call, From, {meters_to_degrees, Meters}} ->
