@@ -4,6 +4,7 @@
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("simulator/include/player_db.hrl").
+-include("neighbour_serv.hrl").
 
 -record(state,
         {parent :: pid(),
@@ -13,7 +14,14 @@
 
 %% Exported: start_link
 
+-define(SIMULATOR_MODULE, square).
+
 start_link() ->
+    Area = ?SIMULATOR_MODULE:get_area(),
+    {MinX, MaxX, MinY, MaxY} = Area,
+    MetersToDegrees = fun ?SIMULATOR_MODULE:meters_to_degrees/1,
+    NeighbourDistance = MetersToDegrees(?NEIGHBOUR_DISTANCE_IN_METERS),
+    ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
     ?spawn_server_opts(fun init/1,
                        fun message_handler/1,
                        #serv_options{name = ?MODULE}).
