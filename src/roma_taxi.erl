@@ -102,7 +102,7 @@ get_location_index(Names) ->
 %% Exported: neighbour_distance_in_meters
 
 neighbour_distance_in_meters() ->
-    75.
+    500.
 
 %% Exported: degrees_to_meters
 
