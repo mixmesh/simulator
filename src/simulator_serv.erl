@@ -117,9 +117,8 @@ init(Parent) ->
     %% Initialize simulator databases
     true = player_db:new(),
     true = stats_db:new(),
-    %% Initialize simulated PKI server
-    LocationIndex = SimulatorModule:get_location_index(),
     %% Start simulated players
+    LocationIndex = SimulatorModule:get_location_index(),
     {_, _, _, AllPlayers} =
         lists:foldl(
           fun({Name, Opaque}, {SyncPort, SmtpPort, Pop3Port, Players}) ->
