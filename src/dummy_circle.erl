@@ -25,6 +25,9 @@ get_location_index() ->
      {<<"Dan">>, {Pi2 * 20, Pi2 / 12, 0, 2, 2500, {5000, -5000}, 0}},
      {<<"Erin">>, {Pi2 * 20, Pi2 / 16, 0, 2, 5000, {0, 0}, 0}}].
 
+
+
+
 %% Exported: get_location_generator
 
 get_location_generator({MaxAngle, DeltaAngle, Timestamp, TimeStep,

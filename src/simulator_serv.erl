@@ -16,7 +16,6 @@
 -include_lib("player/include/player_serv.hrl").
 -include("neighbour_serv.hrl").
 
--define(SIMULATOR_MODULE, square).
 -define(SIMULATION_TIME, (1000 * 60 * 60 * 10)).
 
 -define(STOP_GENERATING_MAIL_TIME, trunc(?SIMULATION_TIME / 2)).
@@ -110,17 +109,18 @@ get_player_names([{{_SyncIpAddress, SyncPort}, _Pid}|Rest]) ->
 
 init(Parent) ->
     rand:seed(exsss),
+    SimulatorModule = config:lookup([simulator, 'data-set']),
     %% Intialize simulator
-    Area = ?SIMULATOR_MODULE:get_area(),
+    Area = SimulatorModule:get_area(),
     {MinX, MaxX, MinY, MaxY} = Area,
-    MetersToDegrees = fun ?SIMULATOR_MODULE:meters_to_degrees/1,
+    MetersToDegrees = fun SimulatorModule:meters_to_degrees/1,
     NeighbourDistance = MetersToDegrees(?NEIGHBOUR_DISTANCE_IN_METERS),
     ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
     %% Initialize simulator databases
     true = player_db:new(),
     true = stats_db:new(),
     %% Initialize simulated PKI server
-    LocationIndex = ?SIMULATOR_MODULE:get_location_index(),
+    LocationIndex = SimulatorModule:get_location_index(),
     Names =
         lists:map(
           fun({Name, _Opaque}) ->
@@ -132,9 +132,9 @@ init(Parent) ->
           fun({Name, Opaque}, {SyncPort, SmtpPort, Pop3Port, Players}) ->
                   GetLocationGenerator =
                       fun() ->
-                              ?SIMULATOR_MODULE:get_location_generator(Opaque)
+                              SimulatorModule:get_location_generator(Opaque)
                       end,
-                  DegreesToMeters = fun ?SIMULATOR_MODULE:degrees_to_meters/1,
+                  DegreesToMeters = fun SimulatorModule:degrees_to_meters/1,
                   PlayerDir =
                       filename:join(["/tmp/obscrete/players", Name, "player"]),
                   TempDir = filename:join([PlayerDir, "temp"]),

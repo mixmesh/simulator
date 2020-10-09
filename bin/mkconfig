@@ -1,0 +1,31 @@
+#!/bin/sh
+
+usage()
+{
+    >&2 echo "mkconfig square | circle | epfl | roma | it"
+    exit 100
+}
+
+if [ $# -lt 1 ]; then
+   usage
+fi
+
+case $1 in
+    square | circle | epfl | roma | it)
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+erl=`which erl`
+if [ -z "${erl}" ]; then
+    >&2 echo "Could not find erl in path!"
+    exit 1
+fi
+
+bin_dir=${0%/*}
+erl_libs=${bin_dir}/../..
+pa="-pa ${erl_libs}/*/ebin"
+
+env ERL_LIBS=${erl_libs} ${erl} ${pa} -noshell -run simulator_mkconfig start $1

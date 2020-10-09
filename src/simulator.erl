@@ -1,5 +1,4 @@
 -module(simulator).
--export([start/0]).
 -export([initialize/5]).
 -export([add_players/1, update_players/1]).
 -export([generate_area/3]).
@@ -21,11 +20,6 @@
 -define(IS_FORWARDER, 1).
 -define(IS_SOURCE, 2).
 -define(IS_TARGET, 3).
-
-%% Exported: start
-
-start() ->
-    {ok,_} = application:ensure_all_started(simulator).
 
 %% Exported: initialize
 
