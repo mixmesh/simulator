@@ -8,7 +8,7 @@
 start([DataSet]) ->
     ObscreteDir = <<"/tmp/obscrete">>,
     PkiDataDir = filename:join([ObscreteDir, <<"pki">>, <<"data">>]),
-    ok = mkconfig:ensure_libs([PkiDataDir], false),
+    ok = mkconfig:ensure_libs([PkiDataDir], true),
     PlayersDir = filename:join([ObscreteDir, "players"]),
     create_players(PlayersDir, get_location_index(DataSet)),
     mkconfig:return(0).

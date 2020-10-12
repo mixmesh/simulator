@@ -28,6 +28,9 @@
 -define(POP3_IP_ADDRESS, {127, 0, 0, 1}).
 -define(POP3_PORT, 32000).
 
+-define(PKI_IP_ADDRESS, {127, 0, 0, 1}).
+-define(PKI_PORT, 11112).
+
 -define(PICK_RANDOM_SOURCE, false).
 
 -record(state,
@@ -134,14 +137,18 @@ init(Parent) ->
                            Name, binary:decode_unsigned(Name)),
                   MaildropSpoolerDir =
                       filename:join([PlayerDir, "maildrop", "spooler"]),
-                  PkiDataDir = filename:join([PlayerDir, "pki", "data"]),
+                  LocalPkiServerDataDir =
+                      filename:join([PlayerDir, "pki", "data"]),
+                  PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
+                  %%PkiMode = local,
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
                         [Name, <<"baz">>, {?SYNC_IP_ADDRESS, SyncPort}, TempDir,
                          Keys, ?F, GetLocationGenerator, DegreesToMeters,
                          {?SMTP_IP_ADDRESS, SmtpPort}, MaildropSpoolerDir,
-                         {?POP3_IP_ADDRESS, Pop3Port}, PkiDataDir]),
+                         {?POP3_IP_ADDRESS, Pop3Port}, LocalPkiServerDataDir,
+                         PkiMode]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =
