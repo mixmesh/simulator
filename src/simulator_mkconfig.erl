@@ -29,9 +29,13 @@ create_players(_PlayersDir, []) ->
 create_players(PlayersDir, [{Name, _}|Rest]) ->
     PlayerDir = filename:join([PlayersDir, Name, <<"player">>]),
     PlayerTempDir = filename:join([PlayerDir, "temp"]),
+    PlayerBufferDir = filename:join([PlayerDir, "buffer"]),
     PlayerPkiDataDir = filename:join([PlayerDir, "pki", "data"]),
     PlayerMaildropSpoolerDir =
         filename:join([PlayerDir, "maildrop", "spooler"]),
     mkconfig:ensure_libs(
-      [PlayerTempDir, PlayerPkiDataDir, PlayerMaildropSpoolerDir], true),
+      [PlayerTempDir,
+       PlayerBufferDir,
+       PlayerPkiDataDir,
+       PlayerMaildropSpoolerDir], true),
     create_players(PlayersDir, Rest).

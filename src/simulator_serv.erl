@@ -133,6 +133,7 @@ init(Parent) ->
                   PlayerDir =
                       filename:join(["/tmp/obscrete/players", Name, "player"]),
                   TempDir = filename:join([PlayerDir, "temp"]),
+                  BufferDir = filename:join([PlayerDir, "buffer"]),
                   Keys = elgamal:generate_key_pair(
                            Name, binary:decode_unsigned(Name)),
                   MaildropSpoolerDir =
@@ -145,10 +146,10 @@ init(Parent) ->
                       supervisor:start_child(
                         simulator_players_sup,
                         [Name, <<"baz">>, {?SYNC_IP_ADDRESS, SyncPort}, TempDir,
-                         Keys, ?F, GetLocationGenerator, DegreesToMeters,
-                         {?SMTP_IP_ADDRESS, SmtpPort}, MaildropSpoolerDir,
-                         {?POP3_IP_ADDRESS, Pop3Port}, LocalPkiServerDataDir,
-                         PkiMode]),
+                         BufferDir, Keys, ?F, GetLocationGenerator,
+                         DegreesToMeters, {?SMTP_IP_ADDRESS, SmtpPort},
+                         MaildropSpoolerDir, {?POP3_IP_ADDRESS, Pop3Port},
+                         LocalPkiServerDataDir, PkiMode]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =
