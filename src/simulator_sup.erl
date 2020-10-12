@@ -11,8 +11,7 @@ start_link() ->
 %% Exported: init
 
 init([]) ->
-    Render = config:lookup([simulator, renderer], reder_serv),
-
+    Render = config:lookup([simulator, renderer]),
     SimulatorPlayersSupSpec =
         #{id => simulator_players_sup,
           start => {simulator_players_sup, start_link, []},
