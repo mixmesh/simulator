@@ -30,7 +30,7 @@ in yellow.
 In the above simulation each player moves in circles with a randomized
 radius and alternating velocities. This is kind of silly (no pun
 intended) but has been valuable during development. Other more
-realistic data sets are available as well: 
+realistic data sets are available as well:
 
 <dl>
   <dt>./priv/epfl_mobility/</dt>
@@ -53,7 +53,7 @@ To use any of these data sets the ./src/simulator_serv.erl (and more) have to be
   <dt>./src/simulator_players_sup.erl</dt>
   <dd>A player supervisor which supervises a dynamic number of
   ./player/src/player_sup.erl supervisors (added dynamically by
-  simulator_serv.erl)</dd> 
+  simulator_serv.erl)</dd>
   <dt>./src/neighbour_serv.erl</dt>
   <dd>A neighbour server which keeps track of how close players are to
   each other. It uses the rstar repository to do this.</dd>
@@ -69,8 +69,7 @@ To use any of these data sets the ./src/simulator_serv.erl (and more) have to be
   <dd>A helper module which contains a marshalling API on top of
   functionality in simulator_nif.erl, but also house a number of GPS
   specific utility functions</dd>
-  <dt>./src/simulator_config.erl</dd>
-  <dd>A helper module to simualtor_serv.erl</dd>
+</dl>
 
 player_db.erl and stats_db.erl wraps public ETS tables which the
 simulator relies upon to gain a global view of each player's state.
