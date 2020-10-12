@@ -110,13 +110,13 @@ init(Parent) ->
     rand:seed(exsss),
     SimulatorModule = config:lookup([simulator, 'data-set']),
     %% Intialize simulator
-    Area = SimulatorModule:get_area(),
-    {MinX, MaxX, MinY, MaxY} = Area,
+    %% Area = SimulatorModule:get_area(),
+    %% {MinX, MaxX, MinY, MaxY} = Area,
     MetersToDegrees = fun SimulatorModule:meters_to_degrees/1,
-    NeighbourDistance =
-        MetersToDegrees(
-          SimulatorModule:neighbour_distance_in_meters()),
-    ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
+    %% NeighbourDistance =
+    %% MetersToDegrees(
+    %% SimulatorModule:neighbour_distance_in_meters()),
+    %% ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
     %% Initialize simulator databases
     true = player_db:new(),
     true = stats_db:new(),

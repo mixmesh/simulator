@@ -10,6 +10,20 @@ get() ->
            name = bool,
            typical = false,
            reloadable = false}},
+       {'renderer',
+        #json_type{
+           name = atom,
+           info = "sdl or epx",
+           typical = sdl,
+           convert =
+               fun(sdl) -> render_serv;
+                  (epx) -> render_epx;
+                  (_) ->
+                       throw(
+                         {failed,
+                          "Must be on of sdl or epx"})
+               end,
+           reloadable = false}},
        {'data-set',
         #json_type{
            name = atom,
