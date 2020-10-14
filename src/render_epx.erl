@@ -3,11 +3,11 @@
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
--include("../include/player_db.hrl").
+-include_lib("player/include/player_serv.hrl").
 
 -define(DEFAULT_DATASET, square).
 
--record(state, 
+-record(state,
 	{
 	 parent :: pid(),
 	 width :: integer(),
@@ -102,7 +102,7 @@ message_handler(S=#state{parent = Parent }) ->
     receive
         update ->
 	    %% draw into background
-	    %% clear 
+	    %% clear
 	    Px = S#state.background,
 	    Font = S#state.font,
 	    epx_gc:set_font(Font),
@@ -120,7 +120,7 @@ message_handler(S=#state{parent = Parent }) ->
 	    epx:pixmap_fill(Px, S#state.color),
 	    %% draw neighbour connections
 	    epx_gc:set_foreground_color(black),
-	    player_db:foldl(	    
+	    player_db:foldl(
 	      fun(#db_player{x=X0,y=Y0,neighbours=Ns}, _Acc) ->
 		      Xi = Kx*X0 - Cx,
 		      Yi = Ky*Y0 - Cy,
@@ -163,12 +163,12 @@ message_handler(S=#state{parent = Parent }) ->
 	    epx:window_detach(S#state.window),
 	    epx:window_detach(S#state.pixels),
 	    stop;
-	
+
         {call, From, stop} ->
 	    epx:window_detach(S#state.window),
 	    epx:window_detach(S#state.pixels),
             {stop, From, ok};
-	
+
         {system, From, Request} ->
             {system, From, Request};
         {'EXIT', Parent, Reason} ->
@@ -180,7 +180,7 @@ message_handler(S=#state{parent = Parent }) ->
 
 update_window(State) ->
     epx:pixmap_copy_to(State#state.background, State#state.pixels),
-    epx:pixmap_draw(State#state.pixels, 
-		    State#state.window, 0, 0, 0, 0, 
-		    State#state.width, 
+    epx:pixmap_draw(State#state.pixels,
+		    State#state.window, 0, 0, 0, 0,
+		    State#state.width,
 		    State#state.height).
