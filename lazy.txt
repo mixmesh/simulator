@@ -1,3 +1,13 @@
-swaks --from p42@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16058 --auth LOGIN --auth-user p42 --auth-password baz --body "FOO"
+p42/p8
+======
 
-mpop --debug --host=127.0.0.1 --port=32092 --deliver=mbox,fnutt --keep=on --auth=user --user=p8 --passwordeval='echo "baz"'
+swaks --from p42@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16058 --auth LOGIN --auth-user p42 --tls-on-connect --auth-password baz --body "FOO"
+
+mpop --debug --host=127.0.0.1 --port=32092 --deliver=mbox,fnutt --keep=on --auth=user --user=p8 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
+
+Alice
+=====
+
+swaks --from alice@obscrete.net --to alice@obscrete.net --server 127.0.0.1:19900 --auth LOGIN --auth-user alice --tls-on-connect --auth-password baz --body "FOO"
+
+mpop --debug --host=127.0.0.1 --port=29900 --deliver=mbox,fnutt --keep=on --auth=user --user=alice --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'

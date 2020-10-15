@@ -117,19 +117,29 @@ init(Parent) ->
     {_, _, _, AllPlayers} =
         lists:foldl(
           fun({Name, Opaque}, {SyncPort, SmtpPort, Pop3Port, Players}) ->
-                  GetLocationGenerator =
-                      fun() ->
-                              SimulatorModule:get_location_generator(Opaque)
-                      end,
-                  DegreesToMeters = fun SimulatorModule:degrees_to_meters/1,
                   PlayerDir =
                       filename:join(["/tmp/obscrete/players", Name, "player"]),
                   TempDir = filename:join([PlayerDir, "temp"]),
                   BufferDir = filename:join([PlayerDir, "buffer"]),
                   Keys = elgamal:generate_key_pair(
                            Name, binary:decode_unsigned(Name)),
+                  GetLocationGenerator =
+                      fun() ->
+                              SimulatorModule:get_location_generator(Opaque)
+                      end,
+                  DegreesToMeters = fun SimulatorModule:degrees_to_meters/1,
                   MaildropSpoolerDir =
                       filename:join([PlayerDir, "maildrop", "spooler"]),
+                  SmtpCertFilename =
+                      filename:join([PlayerDir, "ssl", "cert.pem"]),
+                  %% baz
+                  SmtpPasswordDigest =
+                      <<"7VWLYVsbr6YIsdxrZaCK+az9GeLTH/gCa3qKDNxht7e2WfsKN8aGVaKk5YBCdZ2FK07IJ+GvmstN/fPIH1djnA==">>,
+                  Pop3CertFilename =
+                      filename:join([PlayerDir, "ssl", "cert.pem"]),
+                  %% baz
+                  Pop3PasswordDigest =
+                      <<"7VWLYVsbr6YIsdxrZaCK+az9GeLTH/gCa3qKDNxht7e2WfsKN8aGVaKk5YBCdZ2FK07IJ+GvmstN/fPIH1djnA==">>,
                   LocalPkiServerDataDir =
                       filename:join([PlayerDir, "pki", "data"]),
                   PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
@@ -137,11 +147,25 @@ init(Parent) ->
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
-                        [Name, <<"baz">>, {?SYNC_IP_ADDRESS, SyncPort}, TempDir,
-                         BufferDir, Keys, ?F, GetLocationGenerator,
-                         DegreesToMeters, {?SMTP_IP_ADDRESS, SmtpPort},
-                         MaildropSpoolerDir, {?POP3_IP_ADDRESS, Pop3Port},
-                         LocalPkiServerDataDir, PkiMode]),
+                        [#simulated_player_serv_config{
+                            name = Name,
+                            password = <<"baz">>,
+                            sync_address = {?SYNC_IP_ADDRESS, SyncPort},
+                            temp_dir = TempDir,
+                            buffer_dir = BufferDir,
+                            keys = Keys,
+                            f = ?F,
+                            get_location_generator = GetLocationGenerator,
+                            degrees_to_meters = DegreesToMeters,
+                            spooler_dir = MaildropSpoolerDir,
+                            smtp_address = {?SMTP_IP_ADDRESS, SmtpPort},
+                            smtp_cert_filename = SmtpCertFilename,
+                            smtp_password_digest = SmtpPasswordDigest,
+                            pop3_address = {?POP3_IP_ADDRESS, Pop3Port},
+                            pop3_cert_filename = Pop3CertFilename,
+                            pop3_password_digest = Pop3PasswordDigest,
+                            local_pki_server_data_dir = LocalPkiServerDataDir,
+                            pki_mode = PkiMode}]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =
