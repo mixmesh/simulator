@@ -134,22 +134,22 @@ init(Parent) ->
                       filename:join([PlayerDir, "ssl", "cert.pem"]),
                   %% baz
                   SmtpPasswordDigest =
-                      <<"7VWLYVsbr6YIsdxrZaCK+az9GeLTH/gCa3qKDNxht7e2WfsKN8aGVaKk5YBCdZ2FK07IJ+GvmstN/fPIH1djnA==">>,
+                      <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97, 183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
                   Pop3CertFilename =
                       filename:join([PlayerDir, "ssl", "cert.pem"]),
                   %% baz
                   Pop3PasswordDigest =
-                      <<"7VWLYVsbr6YIsdxrZaCK+az9GeLTH/gCa3qKDNxht7e2WfsKN8aGVaKk5YBCdZ2FK07IJ+GvmstN/fPIH1djnA==">>,
+                      <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97, 183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
                   LocalPkiServerDataDir =
                       filename:join([PlayerDir, "pki", "data"]),
-                  PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
-                  %%PkiMode = local,
+                  %%PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
+                  PkiMode = local,
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
                         [#simulated_player_serv_config{
                             name = Name,
-                            password = <<"baz">>,
+                            pki_password = <<"baz">>,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
                             temp_dir = TempDir,
                             buffer_dir = BufferDir,
