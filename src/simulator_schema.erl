@@ -1,4 +1,4 @@
--module(simulator_config_schema).
+-module(simulator_schema).
 -export([get/0]).
 
 -include_lib("apptools/include/config_schema.hrl").
