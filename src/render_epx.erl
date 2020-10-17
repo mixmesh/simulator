@@ -23,14 +23,18 @@
 	 window :: epx:epx_window() ,
 	 interval :: non_neg_integer(),
 	 area :: {number(),number(),number(),number()},
-	 scale :: {number(),number()}
+	 scale :: {number(),number()},
+	 %% current position
+	 pos0 :: #{ binary() => {X::float(),Y::float() }},
+	 %% target position
+	 pos1 :: #{ binary() => {X::float(),Y::float() }}
 	}).
 
 -define(DEFAULT_WIDTH,  1000).
 -define(DEFAULT_HEIGHT, 1000).
 -define(DEFAULT_COLOR,  {255,0,255,255}).
 -define(DEFAULT_FORMAT, argb).
--define(DEFAULT_INTERVAL, 500).
+-define(DEFAULT_INTERVAL, 2000).
 
 %% Exported: start_link
 
@@ -74,12 +78,15 @@ init(Parent,Options) ->
     Win = epx:window_create(30, 30, Width, Height,
 			    [button_press, button_release]),
     epx:window_attach(Win),
-    self() ! update,
+    Steps = 30,
+    Dt = 1/Steps,
+    self() ! {update,Dt,0.0},
     ?daemon_tag_log(system, "Render epx server has been started", []),
 
     {MinX, MaxX, MinY, MaxY} = Area,
     ScaleX = Width/(MaxX - MinX),
     ScaleY = Height/(MaxY - MinY),
+    Pos = get_positions(),
     {ok, #state{parent = Parent,
 		width = Width,
 		height = Height,
@@ -94,13 +101,15 @@ init(Parent,Options) ->
 		window = Win,
 		interval = Interval,
 		area = Area,
-		scale = {ScaleX,ScaleY}
+		scale = {ScaleX,ScaleY},
+		pos0 = Pos,
+		pos1 = Pos
 	       }}.
 
 
 message_handler(S=#state{parent = Parent }) ->
     receive
-        update ->
+        {update,Dt,T} ->  %% Dt, T should be [0..1] Dt < T
 	    %% draw into background
 	    %% clear
 	    Px = S#state.background,
@@ -120,25 +129,26 @@ message_handler(S=#state{parent = Parent }) ->
 	    epx:pixmap_fill(Px, S#state.color),
 	    %% draw neighbour connections
 	    epx_gc:set_foreground_color(black),
+	    Pos0 = S#state.pos0,
+	    Pos1 = S#state.pos1,
+	    
 	    player_db:foldl(
-	      fun(#db_player{x=X0,y=Y0,neighbours=Ns}, _Acc) ->
+	      fun(#db_player{name=Name,neighbours=Ns}, _Acc) ->
+		      {X0,Y0} = interp(Name,T,Pos0,Pos1),
 		      Xi = Kx*X0 - Cx,
 		      Yi = Ky*Y0 - Cy,
 		      lists:foreach(
 			fun(N) ->
-				case ets:lookup(player_db, N) of
-				    [#db_player{x=X1,y=Y1}] ->
-					Xj = Kx*X1 - Cx,
-					Yj = Ky*Y1 - Cy,
-					epx:draw_line(Px, Xi, Yi, Xj, Yj);
-				    _ ->
-					skip
-				end
+				{X1,Y1} = interp(N,T,Pos0,Pos1),
+				Xj = Kx*X1 - Cx,
+				Yj = Ky*Y1 - Cy,
+				epx:draw_line(Px, Xi, Yi, Xj, Yj)
 			end, Ns)
 	      end, ok),
 	    %% draw nodes
 	    player_db:foldl(
-	      fun(#db_player{x=X0,y=Y0,name=Name}, _Acc) ->
+	      fun(#db_player{name=Name}, _Acc) ->
+		      {X0,Y0} = interp(Name,T,Pos0,Pos1),
 		      X = Kx*X0 - Cx,
 		      Y = Ky*Y0 - Cy,
 		      %% io:format("draw pos = ~p\n", [{X,Y}]),
@@ -156,8 +166,16 @@ message_handler(S=#state{parent = Parent }) ->
 		      epx:draw_string(Px, Lx, Ly + Ascent, String)
 	      end, ok),
 	    update_window(S),
-            erlang:send_after(S#state.interval, self(), update),
-            noreply;
+	    T1 = T+Dt,
+	    Interval = trunc(S#state.interval*Dt),
+	    if T1 >= 1 ->
+		    Pos = get_positions(),
+		    erlang:send_after(Interval,self(),{update,Dt,0.0}),
+		    {noreply, S#state { pos0 = Pos1, pos1 = Pos }};
+	       true ->
+		    erlang:send_after(Interval, self(),{update,Dt,T1}),
+		    noreply
+	    end;
 
 	{epx_event,W,close} when W =:= S#state.window ->
 	    epx:window_detach(S#state.window),
@@ -178,9 +196,21 @@ message_handler(S=#state{parent = Parent }) ->
             noreply
     end.
 
-update_window(State) ->
-    epx:pixmap_copy_to(State#state.background, State#state.pixels),
-    epx:pixmap_draw(State#state.pixels,
-		    State#state.window, 0, 0, 0, 0,
-		    State#state.width,
-		    State#state.height).
+interp(Name,T,Pos0,Pos1) ->
+    {X0,Y0} = maps:get(Name,Pos0,{0,0}),
+    {X1,Y1} = maps:get(Name,Pos1,{0,0}),
+    {X0+(X1-X0)*T, Y0+(Y1-Y0)*T}.
+
+%% Get target positions
+get_positions() ->
+    player_db:foldl(
+      fun(#db_player{name=N,x=X,y=Y}, Pos1) ->
+	      Pos1#{ N => {X,Y}}
+      end, #{}).
+
+update_window(S) ->
+    epx:pixmap_copy_to(S#state.background, S#state.pixels),
+    epx:pixmap_draw(S#state.pixels,
+		    S#state.window, 0, 0, 0, 0,
+		    S#state.width,
+		    S#state.height).
