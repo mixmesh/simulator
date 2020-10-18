@@ -23,60 +23,60 @@ new() ->
 %% Exported: message_buffered
 
 -if(DISABLED).
-message_buffered(_Name) ->
+message_buffered(_Nym) ->
     true.
 -else.
-message_buffered(Name) ->
+message_buffered(Nym) ->
     Timestamp = os:system_time(millisecond),
-    ?dbg_log({message_buffered, Timestamp, Name}),
+    ?dbg_log({message_buffered, Timestamp, Nym}),
     ets:insert(?MODULE,
-               {{message_buffered, Name, erlang:unique_integer()},
+               {{message_buffered, Nym, erlang:unique_integer()},
                 Timestamp}).
 -endif.
 
 %% Exported: message_create
 
 -if(DISABLED).
-message_created(_MessageId, _SenderName, _Recipient_name) ->
+message_created(_MessageId, _SenderNym, _RecipientNym) ->
     true.
 -else.
-message_created(MessageId, SenderName, RecipientName) ->
+message_created(MessageId, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
-    ?dbg_log({message_created, Timestamp, SenderName, RecipientName,
+    ?dbg_log({message_created, Timestamp, SenderNym, RecipientNym,
               MessageId}),
     ets:insert(?MODULE,
-               {{message_created, MessageId}, Timestamp, SenderName,
-                RecipientName}).
+               {{message_created, MessageId}, Timestamp, SenderNym,
+                RecipientNym}).
 -endif.
 
 %% Exported: message_duplicate_received
 
 -if(DISABLED).
-message_duplicate_received(_MessageId, _SenderName, _RecipientName) ->
+message_duplicate_received(_MessageId, _SenderNym, _RecipientNym) ->
     true.
 -else.
-message_duplicate_received(MessageId, SenderName, RecipientName) ->
+message_duplicate_received(MessageId, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
-    ?dbg_log({message_duplicate_received, Timestamp, RecipientName, SenderName,
+    ?dbg_log({message_duplicate_received, Timestamp, RecipientNym, SenderNym,
               MessageId}),
     ets:insert(?MODULE,
-               {{message_duplicate_received, MessageId}, Timestamp, SenderName,
-                RecipientName}).
+               {{message_duplicate_received, MessageId}, Timestamp, SenderNym,
+                RecipientNym}).
 -endif.
 
 %% Exported: message_received
 
 -if(DISABLED).
-message_received(_MessageId, _SenderName, _RecipientName) ->
+message_received(_MessageId, _SenderNym, _RecipientNym) ->
     true.
 -else.
-message_received(MessageId, SenderName, RecipientName) ->
+message_received(MessageId, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
-    ?dbg_log({message_received, Timestamp, RecipientName, SenderName,
+    ?dbg_log({message_received, Timestamp, RecipientNym, SenderNym,
               MessageId}),
     ets:insert(?MODULE,
-               {{message_received, MessageId}, Timestamp, SenderName,
-                RecipientName}).
+               {{message_received, MessageId}, Timestamp, SenderNym,
+                RecipientNym}).
 -endif.
 
 %% Exported: dump
@@ -91,9 +91,9 @@ save() ->
 
 save(Filename) ->
     file:delete(Filename),
-    {ok, Name} = dets:open_file(stats, [{file, Filename}]),
-    Name = ets:to_dets(?MODULE, Name),
-    dets:close(Name).
+    {ok, Nym} = dets:open_file(stats, [{file, Filename}]),
+    Nym = ets:to_dets(?MODULE, Nym),
+    dets:close(Nym).
 
 %% analyze
 
@@ -101,9 +101,9 @@ analyze() ->
     analyze("/home/jocke/tmp/dump.dets").
 
 analyze(Filename) ->
-    {ok, Name} = dets:open_file(Filename),
+    {ok, Nym} = dets:open_file(Filename),
     Tid = ets:new(ram_stats, []),
-    Tid = dets:to_ets(Name, Tid),
+    Tid = dets:to_ets(Nym, Tid),
     perform_analysis(Tid).
 
 perform_analysis(Tid) ->
@@ -116,12 +116,12 @@ delivery_rate(Tid) ->
           fun(Entry, {CreatedMessages, DeliveredMessages, EndToEndDelays}) ->
                   case Entry of
                       {{message_created, MessageId}, CreateTimestamp,
-                       SenderName, RecipientName} ->
+                       SenderNym, RecipientNym} ->
                           case ets:match_object(
                                  Tid, {{message_received, MessageId},
                                        '_',
-                                       SenderName,
-                                       RecipientName}) of
+                                       SenderNym,
+                                       RecipientNym}) of
                               [] ->
                                   {CreatedMessages + 1,
                                    DeliveredMessages,

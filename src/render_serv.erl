@@ -36,7 +36,7 @@ stop() ->
 %%
 
 init(Parent) ->
-    PlayerCache = ets:new(player_cache, [{keypos, #db_player.name}]),
+    PlayerCache = ets:new(player_cache, [{keypos, #db_player.nym}]),
     self() ! update,
     ?daemon_tag_log(system, "Render server has been started", []),
     {ok, #state{parent = Parent, player_cache = PlayerCache}}.
@@ -49,7 +49,7 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
             {NewPlayers, UpdatedPlayers} =
                 player_db:foldl(
                   fun(#db_player{
-                         name = Name,
+                         nym = Nym,
                          x = X,
                          y = Y,
                          buffer_size = BufferSize,
@@ -57,12 +57,12 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
                          is_zombie = IsZombie,
                          pick_mode = PickMode} = Player,
                       {NewPlayers, UpdatedPlayers} = Acc) ->
-                          case ets:lookup(PlayerCache, Name) of
+                          case ets:lookup(PlayerCache, Nym) of
                               [] when IsZombie ->
                                   Acc;
                               [] ->
                                   true = ets:insert(PlayerCache, Player),
-                                  {[{Name, X, Y}|NewPlayers], UpdatedPlayers};
+                                  {[{Nym, X, Y}|NewPlayers], UpdatedPlayers};
                               [Player] ->
                                   Acc;
                               [CachedPlayer] ->
@@ -86,14 +86,14 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
                                   if
                                       IsZombie andalso
                                       not CachedPlayer#db_player.is_zombie ->
-                                          true = ets:delete(PlayerCache, Name);
+                                          true = ets:delete(PlayerCache, Nym);
                                       true ->
                                           true = ets:insert(PlayerCache, Player)
                                   end,
                                   if
                                       length(UpdatedValues) > 0 ->
                                           {NewPlayers,
-                                           [{Name, UpdatedValues}|
+                                           [{Nym, UpdatedValues}|
                                             UpdatedPlayers]};
                                       true ->
                                           {NewPlayers, UpdatedPlayers}

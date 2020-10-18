@@ -22,9 +22,9 @@ get_area() ->
 generate_area() ->
     generate_area(?FIRE_FIGTHERS).
 
-generate_area(Names) ->
+generate_area(Nyms) ->
     simulator:generate_area(
-      get_location_index(Names), fun parse_line/1, false).
+      get_location_index(Nyms), fun parse_line/1, false).
 
 parse_line(Line) ->
     [Latitude, Longitude, Time] = string:lexemes(Line, " "),
@@ -51,15 +51,15 @@ get_location_generator(Path) ->
 get_location_index() ->
     get_location_index(?FIRE_FIGTHERS).
 
-get_location_index(Names) ->
+get_location_index(Nyms) ->
     DataDir = code:priv_dir(simulator),
     simulator:get_location_index(
-      Names,
-      fun(Name) ->
+      Nyms,
+      fun(Nym) ->
               filename:join(
                 [DataDir,
                  <<"it_vr2marketbaiaotrial">>,
-                 ?l2b([<<"data">>, Name, <<".txt">>])])
+                 ?l2b([<<"data">>, Nym, <<".txt">>])])
       end).
 
 %% Exported: neighbour_distance_in_meters

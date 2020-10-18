@@ -41,9 +41,9 @@ get_area() ->
 generate_area() ->
     generate_area(?CABS).
 
-generate_area(Names) ->
+generate_area(Nyms) ->
     simulator:generate_area(
-      get_location_index(Names), fun parse_line/1, false).
+      get_location_index(Nyms), fun parse_line/1, false).
 
 parse_line(Line) ->
     [_, Time, Point] = string:lexemes(Line, ";"),
@@ -90,13 +90,13 @@ get_location_generator(Path) ->
 get_location_index() ->
     get_location_index(?CABS).
 
-get_location_index(Names) ->
+get_location_index(Nyms) ->
     DataDir = code:priv_dir(simulator),
     simulator:get_location_index(
-      Names,
-      fun(Name) ->
+      Nyms,
+      fun(Nym) ->
               filename:join(
-                [DataDir, <<"roma_taxi">>, ?l2b([Name, <<".txt">>])])
+                [DataDir, <<"roma_taxi">>, ?l2b([Nym, <<".txt">>])])
       end).
 
 %% Exported: neighbour_distance_in_meters

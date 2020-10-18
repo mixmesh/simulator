@@ -72,8 +72,8 @@ update_players(Players, NeighbourDistance) ->
 
 build_rstar_tree(Tree, []) ->
     Tree;
-build_rstar_tree(Tree, [{#player{name = Name} = Player, _Neighbours}|Rest]) ->
-    case player_db:lookup(Name) of
+build_rstar_tree(Tree, [{#player{nym = Nym} = Player, _Neighbours}|Rest]) ->
+    case player_db:lookup(Nym) of
         [] ->
             build_rstar_tree(Tree, Rest);
         [#db_player{is_zombie = true}] ->
@@ -87,10 +87,10 @@ build_rstar_tree(Tree, [{#player{name = Name} = Player, _Neighbours}|Rest]) ->
 inform_players(_Tree, [], _NeighbourDistance) ->
     [];
 inform_players(Tree,
-               [{#player{name = Name, nodis_serv_pid = NodisServPid} = Player,
+               [{#player{nym = Nym, nodis_serv_pid = NodisServPid} = Player,
                  _OldNeighbours}|Rest],
                NeighbourDistance) ->
-    NewNeighbours = get_neighbours(Tree, NeighbourDistance, Name),
+    NewNeighbours = get_neighbours(Tree, NeighbourDistance, Nym),
     lists:foreach(
       fun(#player{sync_address = {SyncIpAddress, SyncPort}}) ->
               ok = nodis_srv:simping(
@@ -99,8 +99,8 @@ inform_players(Tree,
       end, NewNeighbours),
     [{Player, NewNeighbours}|inform_players(Tree, Rest, NeighbourDistance)].
 
-get_neighbours(Tree, NeighbourDistance, Name) ->
-    case player_db:lookup(Name) of
+get_neighbours(Tree, NeighbourDistance, Nym) ->
+    case player_db:lookup(Nym) of
         [] ->
             [];
         [#db_player{x = X, y = Y}] ->
@@ -108,8 +108,8 @@ get_neighbours(Tree, NeighbourDistance, Name) ->
             Matches = rstar:search_around(Tree, Point, NeighbourDistance),
             lists:sort(
               lists:foldl(
-                fun(#geometry{value = #player{name = PlayerName}}, Acc)
-                      when PlayerName == Name->
+                fun(#geometry{value = #player{nym = PlayerNym}}, Acc)
+                      when PlayerNym == Nym ->
                         Acc;
                    (#geometry{value = Player}, Acc) ->
                         [Player|Acc]

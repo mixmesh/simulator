@@ -131,10 +131,10 @@ message_handler(S=#state{parent = Parent }) ->
 	    epx_gc:set_foreground_color(black),
 	    Pos0 = S#state.pos0,
 	    Pos1 = S#state.pos1,
-	    
+
 	    player_db:foldl(
-	      fun(#db_player{name=Name,neighbours=Ns}, _Acc) ->
-		      {X0,Y0} = interp(Name,T,Pos0,Pos1),
+	      fun(#db_player{nym=Nym,neighbours=Ns}, _Acc) ->
+		      {X0,Y0} = interp(Nym,T,Pos0,Pos1),
 		      Xi = Kx*X0 - Cx,
 		      Yi = Ky*Y0 - Cy,
 		      lists:foreach(
@@ -147,8 +147,8 @@ message_handler(S=#state{parent = Parent }) ->
 	      end, ok),
 	    %% draw nodes
 	    player_db:foldl(
-	      fun(#db_player{name=Name}, _Acc) ->
-		      {X0,Y0} = interp(Name,T,Pos0,Pos1),
+	      fun(#db_player{nym=Nym}, _Acc) ->
+		      {X0,Y0} = interp(Nym,T,Pos0,Pos1),
 		      X = Kx*X0 - Cx,
 		      Y = Ky*Y0 - Cy,
 		      %% io:format("draw pos = ~p\n", [{X,Y}]),
@@ -156,7 +156,7 @@ message_handler(S=#state{parent = Parent }) ->
 		      epx_gc:set_fill_color(red),
 		      epx:draw_ellipse(Px, X-3, Y-3, 6, 6),
 		      %% precompute!?
-		      String = binary_to_list(Name),
+		      String = binary_to_list(Nym),
 		      {W,H} = epx_font:dimension(Font, String),
 		      epx_gc:set_fill_color({215,215,215}),
 		      Lx = X-3-10,
@@ -196,15 +196,15 @@ message_handler(S=#state{parent = Parent }) ->
             noreply
     end.
 
-interp(Name,T,Pos0,Pos1) ->
-    {X0,Y0} = maps:get(Name,Pos0,{0,0}),
-    {X1,Y1} = maps:get(Name,Pos1,{0,0}),
+interp(Nym,T,Pos0,Pos1) ->
+    {X0,Y0} = maps:get(Nym,Pos0,{0,0}),
+    {X1,Y1} = maps:get(Nym,Pos1,{0,0}),
     {X0+(X1-X0)*T, Y0+(Y1-Y0)*T}.
 
 %% Get target positions
 get_positions() ->
     player_db:foldl(
-      fun(#db_player{name=N,x=X,y=Y}, Pos1) ->
+      fun(#db_player{nym=N,x=X,y=Y}, Pos1) ->
 	      Pos1#{ N => {X,Y}}
       end, #{}).
 

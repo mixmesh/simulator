@@ -36,8 +36,8 @@ add_players([]) ->
     ok;
 add_players(NewPlayers) ->
     ConvertedNewPlayers =
-        lists:map(fun({Name, X, Y}) ->
-                          {?b2l(Name), X, Y}
+        lists:map(fun({Nym, X, Y}) ->
+                          {?b2l(Nym), X, Y}
                   end, NewPlayers),
     simulator_nif:add_players(ConvertedNewPlayers).
 
@@ -47,15 +47,15 @@ update_players([]) ->
     ok;
 update_players(UpdatedPlayers) ->
     ConvertedUpdatedPlayers =
-        lists:map(fun({Name, UpdatedValues}) ->
-                          {?b2l(Name), convert_updated_values(UpdatedValues)}
+        lists:map(fun({Nym, UpdatedValues}) ->
+                          {?b2l(Nym), convert_updated_values(UpdatedValues)}
                   end, UpdatedPlayers),
     simulator_nif:update_players(ConvertedUpdatedPlayers).
 
 convert_updated_values([]) ->
     [];
 convert_updated_values([{neighbours, Neighbours}|Rest]) ->
-    UpdatedNeighbours = lists:map(fun(Name) -> ?b2l(Name) end, Neighbours),
+    UpdatedNeighbours = lists:map(fun(Nym) -> ?b2l(Nym) end, Neighbours),
     [{neighbours, UpdatedNeighbours}|convert_updated_values(Rest)];
 convert_updated_values([{is_zombie, true}|Rest]) ->
     [{is_zombie, 1}|convert_updated_values(Rest)];
@@ -91,14 +91,14 @@ generate_area(Index, ParseLine, KeepDb) ->
 load_all_players(Index, _ParseLine, _Db, N, Range)
   when N == 0 orelse Index == [] ->
     Range;
-load_all_players([{Name, Path}|Rest], ParseLine, Db, N, Range) ->
+load_all_players([{Nym, Path}|Rest], ParseLine, Db, N, Range) ->
     io:format("Parsing ~s...\n", [Path]),
     {ok, File} = file:open(Path, [read, raw, read_ahead, binary]),
-    UpdatedRange = load_player(ParseLine, Db, Name, File, Range),
+    UpdatedRange = load_player(ParseLine, Db, Nym, File, Range),
     ok = file:close(File),
     load_all_players(Rest, ParseLine, Db, N - 1, UpdatedRange).
 
-load_player(ParseLine, Db, Name, File,
+load_player(ParseLine, Db, Nym, File,
             {MinTimestamp, MaxTimestamp,
              MinLongitude, MaxLongitude,
              MinLatitude, MaxLatitude} = Range) ->
@@ -112,18 +112,18 @@ load_player(ParseLine, Db, Name, File,
             UpdatedMaxTimestamp =
                 cswap(fun erlang:'>'/2, Timestamp, MaxTimestamp),
             UpdatedMinLongitude =
-                cswap(Db, Name, min_longitude, fun erlang:'<'/2, Longitude,
+                cswap(Db, Nym, min_longitude, fun erlang:'<'/2, Longitude,
                       MinLongitude),
             UpdatedMaxLongitude =
-                cswap(Db, Name, max_longitude, fun erlang:'>'/2, Longitude,
+                cswap(Db, Nym, max_longitude, fun erlang:'>'/2, Longitude,
                       MaxLongitude),
             UpdatedMinLatitude =
-                cswap(Db, Name, min_latitude, fun erlang:'<'/2, Latitude,
+                cswap(Db, Nym, min_latitude, fun erlang:'<'/2, Latitude,
                       MinLatitude),
             UpdatedMaxLatitude =
-                cswap(Db, Name, max_latitude, fun erlang:'>'/2, Latitude,
+                cswap(Db, Nym, max_latitude, fun erlang:'>'/2, Latitude,
                       MaxLatitude),
-            load_player(ParseLine, Db, Name, File,
+            load_player(ParseLine, Db, Nym, File,
                         {UpdatedMinTimestamp, UpdatedMaxTimestamp,
                          UpdatedMinLongitude, UpdatedMaxLongitude,
                          UpdatedMinLatitude, UpdatedMaxLatitude})
@@ -137,15 +137,15 @@ cswap(Compare, Value1, Value2) ->
             Value2
     end.
 
-cswap(Db, Name, Coordinate, Compare, Value1, Value2) ->
+cswap(Db, Nym, Coordinate, Compare, Value1, Value2) ->
     case Value2 == -1 orelse Compare(Value1, Value2) of
         true ->
-            true = ets:insert(Db, {{Coordinate, Name}, Value1}),
+            true = ets:insert(Db, {{Coordinate, Nym}, Value1}),
             Value1;
         false ->
-            case ets:match(Db, {{Coordinate, Name}, '_'}) of
+            case ets:match(Db, {{Coordinate, Nym}, '_'}) of
                 [] ->
-                    true = ets:insert(Db, {{Coordinate, Name}, Value2});
+                    true = ets:insert(Db, {{Coordinate, Nym}, Value2});
                 _ ->
                     Value2
             end
@@ -184,8 +184,8 @@ get_location_generator(ParseLine, File, FirstTimestamp) ->
 
 get_location_index([], _GenerateFilename) ->
     [];
-get_location_index([Name|Rest], GenerateFilename) ->
-    [{Name, GenerateFilename(Name)}|
+get_location_index([Nym|Rest], GenerateFilename) ->
+    [{Nym, GenerateFilename(Nym)}|
      get_location_index(Rest, GenerateFilename)].
 
 %% Exported: degrees_to_meters
@@ -253,43 +253,43 @@ degree_to_radians(X) ->
 
 zscoring(Index, ParseLine, Stdev) ->
     {Db, _Range} = generate_area(Index, ParseLine, true),
-    MinLongitudeNames = filter(zscore_coordinate(Db, min_longitude), Stdev),
-    MaxLongitudeNames = filter(zscore_coordinate(Db, max_longitude), Stdev),
-    MinLatitudeNames = filter(zscore_coordinate(Db, min_latitude), Stdev),
-    MaxLatitudeNames = filter(zscore_coordinate(Db, max_latitude), Stdev),
+    MinLongitudeNyms = filter(zscore_coordinate(Db, min_longitude), Stdev),
+    MaxLongitudeNyms = filter(zscore_coordinate(Db, max_longitude), Stdev),
+    MinLatitudeNyms = filter(zscore_coordinate(Db, min_latitude), Stdev),
+    MaxLatitudeNyms = filter(zscore_coordinate(Db, max_latitude), Stdev),
     lists:sort(
       sets:to_list(
         sets:intersection(
-          [sets:from_list(MinLongitudeNames),
-           sets:from_list(MaxLongitudeNames),
-           sets:from_list(MinLatitudeNames),
-           sets:from_list(MaxLatitudeNames)]))).
+          [sets:from_list(MinLongitudeNyms),
+           sets:from_list(MaxLongitudeNyms),
+           sets:from_list(MinLatitudeNyms),
+           sets:from_list(MaxLatitudeNyms)]))).
 
 zscore_coordinate(Db, Which) ->
     List =
         lists:sort(
-          lists:map(fun([Name, Coordinate]) ->
-                            {Name, Coordinate}
+          lists:map(fun([Nym, Coordinate]) ->
+                            {Nym, Coordinate}
                     end, ets:match(Db, {{Which, '$1'}, '$2'}))),
-    Names =
-        lists:map(fun({Name, _Coordinate}) ->
-                          Name
+    Nyms =
+        lists:map(fun({Nym, _Coordinate}) ->
+                          Nym
                   end, List),
     Coordinates =
-        lists:map(fun({_Name, Coordinate}) ->
+        lists:map(fun({_Nym, Coordinate}) ->
                           Coordinate
                   end, List),
     Zscores = zscore(Coordinates),
-    lists:zip3(Names, Coordinates, Zscores).
+    lists:zip3(Nyms, Coordinates, Zscores).
 
 filter([], _Stdev) ->
     [];
-filter([{Name, Coordinate, Zscore}|Rest], Stdev) ->
+filter([{Nym, Coordinate, Zscore}|Rest], Stdev) ->
     case abs(Zscore) < Stdev of
         true ->
-            [Name|filter(Rest, Stdev)];
+            [Nym|filter(Rest, Stdev)];
         false ->
-            io:format("Outlier: ~p\n", [{Name, Zscore, Coordinate}]),
+            io:format("Outlier: ~p\n", [{Nym, Zscore, Coordinate}]),
             filter(Rest, Stdev)
     end.
 

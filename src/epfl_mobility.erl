@@ -32,9 +32,9 @@ get_area() ->
 generate_area() ->
     generate_area(?CABS).
 
-generate_area(Names) ->
+generate_area(Nyms) ->
     simulator:generate_area(
-      get_location_index(Names), fun parse_line/1, false).
+      get_location_index(Nyms), fun parse_line/1, false).
 
 parse_line(Line) ->
     [Latitude, Longitude, _, Time] = string:lexemes(Line, " "),
@@ -56,14 +56,14 @@ get_location_generator(Path) ->
 get_location_index() ->
     get_location_index(?CABS).
 
-get_location_index(Names) ->
+get_location_index(Nyms) ->
     DataDir = code:priv_dir(simulator),
     simulator:get_location_index(
-      Names,
-      fun(Name) ->
+      Nyms,
+      fun(Nym) ->
               filename:join([DataDir,
                              <<"epfl_mobility">>,
-                             ?l2b([<<"new_">>, Name, <<".txt">>])])
+                             ?l2b([<<"new_">>, Nym, <<".txt">>])])
       end).
 
 %% Exported: read_location_index
@@ -82,11 +82,11 @@ read_location_index(DataDir, File) ->
             ok = file:close(File),
             [];
         {ok, Data} ->
-            [Name, _] = string:lexemes(Data, " "),
-            [{Name, filename:join(
+            [Nym, _] = string:lexemes(Data, " "),
+            [{Nym, filename:join(
                       [DataDir,
                        <<"epfl_mobility">>,
-                       ?l2b([<<"new_">>, Name, <<".txt">>])])}|
+                       ?l2b([<<"new_">>, Nym, <<".txt">>])])}|
              read_location_index(DataDir, File)]
     end.
 

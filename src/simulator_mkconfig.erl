@@ -27,8 +27,8 @@ get_location_index("it") ->
 
 create_players(_SourceCertFilename, _PlayersDir, []) ->
     ok;
-create_players(SourceCertFilename, PlayersDir, [{Name, _}|Rest]) ->
-    PlayerDir = filename:join([PlayersDir, Name, <<"player">>]),
+create_players(SourceCertFilename, PlayersDir, [{Nym, _}|Rest]) ->
+    PlayerDir = filename:join([PlayersDir, Nym, <<"player">>]),
     PlayerTempDir = filename:join([PlayerDir, "temp"]),
     PlayerBufferDir = filename:join([PlayerDir, "buffer"]),
     PlayerPkiDataDir = filename:join([PlayerDir, "pki", "data"]),

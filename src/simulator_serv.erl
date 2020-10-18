@@ -2,7 +2,7 @@
 -export([start_link/0, stop/0]).
 -export([elect_source_and_target/3]).
 -export([get_players/0]).
--export([get_player_names/1]).
+-export([get_player_nyms/1]).
 -export([get_random_player/1]).
 -export([meters_to_degrees/1]).
 -export([pause_player/0, pause_player/1]).
@@ -52,24 +52,24 @@ stop() ->
 
 %% Exported: elect_source_and_target
 
-elect_source_and_target(MessageId, SourceName, TargetName) ->
+elect_source_and_target(MessageId, SourceNym, TargetNym) ->
     serv:cast(?MODULE,
-              {elect_source_and_target, MessageId, SourceName, TargetName}).
+              {elect_source_and_target, MessageId, SourceNym, TargetNym}).
 
 %% Exported: get_players
 
 get_players() ->
     serv:call(?MODULE, get_players).
 
-%% Exported: get_player_names
+%% Exported: get_player_nyms
 
-get_player_names(SyncAddresses) ->
-    serv:call(?MODULE, {get_player_names, SyncAddresses}).
+get_player_nyms(SyncAddresses) ->
+    serv:call(?MODULE, {get_player_nyms, SyncAddresses}).
 
 %% Exported: get_random_player
 
-get_random_player(Name) ->
-    serv:call(?MODULE, {get_random_player, Name}).
+get_random_player(Nym) ->
+    serv:call(?MODULE, {get_random_player, Nym}).
 
 %% Exported: meters_to_degrees
 
@@ -81,16 +81,16 @@ meters_to_degrees(Meters) ->
 pause_player() ->
     serv:cast(?MODULE, pause_player).
 
-pause_player(Name) ->
-    serv:cast(?MODULE, {pause_player, Name}).
+pause_player(Nym) ->
+    serv:cast(?MODULE, {pause_player, Nym}).
 
 %% Exported: resume_player
 
 resume_player() ->
     serv:cast(?MODULE, resume_player).
 
-resume_player(Name) ->
-    serv:cast(?MODULE, {resume_player, Name}).
+resume_player(Nym) ->
+    serv:cast(?MODULE, {resume_player, Nym}).
 
 %% Exported: stop_generating_mails
 
@@ -99,8 +99,8 @@ stop_generating_mails() ->
 
 %% Exported: target_received_message
 
-target_received_message(TargetName, SourceName) ->
-    serv:cast(?MODULE, {target_received_message, TargetName, SourceName}).
+target_received_message(TargetNym, SourceNym) ->
+    serv:cast(?MODULE, {target_received_message, TargetNym, SourceNym}).
 
 %%
 %% Server
@@ -116,13 +116,13 @@ init(Parent) ->
     LocationIndex = SimulatorModule:get_location_index(),
     {_, _, _, AllPlayers} =
         lists:foldl(
-          fun({Name, Opaque}, {SyncPort, SmtpPort, Pop3Port, Players}) ->
+          fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, Players}) ->
                   PlayerDir =
-                      filename:join(["/tmp/obscrete/players", Name, "player"]),
+                      filename:join(["/tmp/obscrete/players", Nym, "player"]),
                   TempDir = filename:join([PlayerDir, "temp"]),
                   BufferDir = filename:join([PlayerDir, "buffer"]),
                   Keys = elgamal:generate_key_pair(
-                           Name, binary:decode_unsigned(Name)),
+                           Nym, binary:decode_unsigned(Nym)),
                   GetLocationGenerator =
                       fun() ->
                               SimulatorModule:get_location_generator(Opaque)
@@ -148,7 +148,7 @@ init(Parent) ->
                       supervisor:start_child(
                         simulator_players_sup,
                         [#simulated_player_serv_config{
-                            name = Name,
+                            nym = Nym,
                             pki_password = <<"baz">>,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
                             temp_dir = TempDir,
@@ -173,7 +173,7 @@ init(Parent) ->
                   %%ok = player_serv:add_dummy_messages(
                   %%       player_serv_pid, rand:uniform(50)),
                   {SyncPort + 1, SmtpPort + 1, Pop3Port + 1,
-                   [#player{name = Name,
+                   [#player{nym = Nym,
                             player_serv_pid = PlayerServPid,
                             nodis_serv_pid = NodisServPid,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
@@ -214,28 +214,28 @@ message_handler(#state{parent = Parent,
     receive
         {call, From, stop} ->
             {stop, From, ok};
-        {cast, {elect_source_and_target, MessageId, SourceName, TargetName}} ->
+        {cast, {elect_source_and_target, MessageId, SourceNym, TargetNym}} ->
             {value, SourcePlayer} =
-                lists:keysearch(SourceName, #player.name, Players),
+                lists:keysearch(SourceNym, #player.nym, Players),
             {value, TargetPlayer} =
-                lists:keysearch(TargetName, #player.name, Players),
+                lists:keysearch(TargetNym, #player.nym, Players),
             ok = elect_source_and_target(
                    Players, MessageId, SourcePlayer, TargetPlayer),
             noreply;
         {call, From, get_players} ->
             {reply, From, Players};
-        {call, From, {get_player_names, SyncAddresses}} ->
-            Names =
+        {call, From, {get_player_nyms, SyncAddresses}} ->
+            Nyms =
                 lists:map(
                   fun(SyncAddress) ->
-                          {value, #player{name = Name}} =
+                          {value, #player{nym = Nym}} =
                               lists:keysearch(
                                 SyncAddress, #player.sync_address, Players),
-                          Name
+                          Nym
                   end, SyncAddresses),
-            {reply, From, Names};
-        {call, From, {get_random_player, Name}} ->
-            {reply, From, get_random_player(Name, Players)};
+            {reply, From, Nyms};
+        {call, From, {get_random_player, Nym}} ->
+            {reply, From, get_random_player(Nym, Players)};
         {call, From, {meters_to_degrees, Meters}} ->
             {reply, From, MetersToDegrees(Meters)};
         {cast, pause_player} ->
@@ -243,8 +243,8 @@ message_handler(#state{parent = Parent,
                                   player_serv:pause(PlayerServPid)
                           end, Players),
             noreply;
-        {cast, {pause_player, Name}} ->
-            case get_player(Name, Players) of
+        {cast, {pause_player, Nym}} ->
+            case get_player(Nym, Players) of
                 {found, #player{player_serv_pid = PlayerServPid}} ->
                     player_serv:pause(PlayerServPid),
                     noreply;
@@ -256,8 +256,8 @@ message_handler(#state{parent = Parent,
                                   player_serv:resume(PlayerServPid)
                           end, Players),
             noreply;
-        {cast, {resume_player, Name}} ->
-            case get_player(Name, Players) of
+        {cast, {resume_player, Nym}} ->
+            case get_player(Nym, Players) of
                 {found, #player{player_serv_pid = PlayerServPid}} ->
                     player_serv:resume(PlayerServPid),
                     noreply;
@@ -271,18 +271,18 @@ message_handler(#state{parent = Parent,
               end, Players),
             ?daemon_tag_log(system, "No more mails are generated", []),
             noreply;
-        {cast, {target_received_message, TargetName, SourceName}} ->
+        {cast, {target_received_message, TargetNym, SourceNym}} ->
             ok = ping(),
             ?daemon_tag_log(system, "Target received message", []),
             {found, #player{player_serv_pid = TargetPlayerServPid}} =
-                get_player(TargetName, Players),
+                get_player(TargetNym, Players),
             player_serv:become_nothing(TargetPlayerServPid),
             {found, #player{player_serv_pid = SourcePlayerServPid}} =
-                get_player(SourceName, Players),
+                get_player(SourceNym, Players),
             player_serv:become_nothing(SourcePlayerServPid),
             lists:foreach(
-              fun(#player{name = Name, player_serv_pid = PlayerServPid})
-                    when Name /= TargetName andalso Name /= SourceName ->
+              fun(#player{nym = Nym, player_serv_pid = PlayerServPid})
+                    when Nym /= TargetNym andalso Nym /= SourceNym ->
                       player_serv:become_nothing(PlayerServPid);
                  (_) ->
                       ok
@@ -312,45 +312,45 @@ message_handler(#state{parent = Parent,
 
 elect_source_and_target(
   Players, MessageId,
-  #player{name = SourceName, player_serv_pid = SourcePlayerServPid},
-  #player{name = TargetName, player_serv_pid = TargetPlayerServPid}) ->
-    ok = player_serv:become_source(SourcePlayerServPid, TargetName, MessageId),
+  #player{nym = SourceNym, player_serv_pid = SourcePlayerServPid},
+  #player{nym = TargetNym, player_serv_pid = TargetPlayerServPid}) ->
+    ok = player_serv:become_source(SourcePlayerServPid, TargetNym, MessageId),
     ?daemon_tag_log(system,
                     "~s has been elected as new source (~w)",
-                    [SourceName, MessageId]),
+                    [SourceNym, MessageId]),
     ok = player_serv:become_target(TargetPlayerServPid, MessageId),
     ?daemon_tag_log(system,
                     "~s has been elected as new target (~w)",
-                    [TargetName, MessageId]),
+                    [TargetNym, MessageId]),
     lists:foreach(
-      fun(#player{name = Name,
+      fun(#player{nym = Nym,
                   player_serv_pid = ForwarderPlayerServPid})
-            when Name /= SourceName andalso Name /= TargetName ->
+            when Nym /= SourceNym andalso Nym /= TargetNym ->
               ok = player_serv:become_forwarder(
                      ForwarderPlayerServPid, MessageId),
               ?daemon_log(
                  "~s has been elected as new forwarder (~w)",
-                 [Name, MessageId]);
-         (#player{name = _Name}) ->
+                 [Nym, MessageId]);
+         (#player{nym = _Nym}) ->
               ok
       end, Players),
     ok.
 
-get_random_player(Name, Players) ->
+get_random_player(Nym, Players) ->
     N = rand:uniform(length(Players)),
     case lists:nth(N, Players) of
-        #player{name = Name} ->
-            get_random_player(Name, Players);
+        #player{nym = Nym} ->
+            get_random_player(Nym, Players);
         Player ->
             Player
     end.
 
-get_player(_Name, []) ->
+get_player(_Nym, []) ->
     not_found;
-get_player(Name, [#player{name = Name} = Player|_]) ->
+get_player(Nym, [#player{nym = Nym} = Player|_]) ->
     {found, Player};
-get_player(Name, [_|Rest]) ->
-    get_player(Name, Rest).
+get_player(Nym, [_|Rest]) ->
+    get_player(Nym, Rest).
 
 ping() ->
     spawn(fun() ->
