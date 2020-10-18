@@ -34,8 +34,8 @@
 -define(PICK_RANDOM_SOURCE, false).
 
 -record(state,
-        {parent            :: pid(),
-         players           :: [#player{}],
+        {parent :: pid(),
+         players :: [#player{}],
          meters_to_degrees :: fun()}).
 
 %% Exported: start_link

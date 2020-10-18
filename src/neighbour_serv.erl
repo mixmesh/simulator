@@ -9,8 +9,8 @@
 -define(UPDATE_TIME, 500).
 
 -record(state,
-        {parent             :: pid(),
-         players            :: [{#player{}, [#player{}]}],
+        {parent :: pid(),
+         players :: [{#player{}, [#player{}]}],
          neighbour_distance :: number()}).
 
 %% Exported: start_link
