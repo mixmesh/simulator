@@ -1,7 +1,7 @@
 -module(render_epx).
 -export([start_link/0, stop/0]).
 
--include_lib("obscrete/include/log.hrl").
+-include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("player/include/player_serv.hrl").
 

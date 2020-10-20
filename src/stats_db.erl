@@ -5,7 +5,7 @@
 -export([dump/0, save/0, save/1]).
 -export([analyze/0, analyze/1]).
 
--include_lib("obscrete/include/log.hrl").
+-include_lib("apptools/include/log.hrl").
 
 -define(DISABLED, false).
 

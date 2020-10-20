@@ -10,7 +10,7 @@
 -export([stop_generating_mails/0]).
 -export([target_received_message/2]).
 
--include_lib("obscrete/include/log.hrl").
+-include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("player/include/player_serv.hrl").
