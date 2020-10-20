@@ -1,7 +1,7 @@
 -module(render_epx).
 -export([start_link/0, stop/0]).
 
--include_lib("apptools/include/log.hrl").
+-include_lib("obscrete/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("player/include/player_serv.hrl").
 
@@ -81,7 +81,7 @@ init(Parent,Options) ->
     Steps = 30,
     Dt = 1/Steps,
     self() ! {update,Dt,0.0},
-    ?daemon_tag_log(system, "Render epx server has been started", []),
+    ?daemon_log_tag_fmt(system, "Render epx server has been started", []),
 
     {MinX, MaxX, MinY, MaxY} = Area,
     ScaleX = Width/(MaxX - MinX),

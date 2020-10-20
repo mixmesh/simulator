@@ -8,7 +8,6 @@
 -export([zscoring/3]).
 -export([binary_to_number/1]).
 
--include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/shorthand.hrl").
 
 -define(WINDOW_WIDTH, 1000.0).

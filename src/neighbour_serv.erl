@@ -1,7 +1,7 @@
 -module(neighbour_serv).
 -export([start_link/0, stop/0]).
 
--include_lib("apptools/include/log.hrl").
+-include_lib("obscrete/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("player/include/player_serv.hrl").
 -include_lib("rstar/include/rstar.hrl").
@@ -38,7 +38,7 @@ init(Parent) ->
         simulator_serv:meters_to_degrees(
           SimulatorModule:neighbour_distance_in_meters()),
     self() ! update,
-    ?daemon_tag_log(system, "Neighbour server has been started", []),
+    ?daemon_log_tag_fmt(system, "Neighbour server has been started", []),
     {ok, #state{parent = Parent,
                 players = Players,
                 neighbour_distance = NeighbourDistance}}.

@@ -1,7 +1,7 @@
 -module(render_serv).
 -export([start_link/0, stop/0]).
 
--include_lib("apptools/include/log.hrl").
+-include_lib("obscrete/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("player/include/player_serv.hrl").
 
@@ -38,7 +38,7 @@ stop() ->
 init(Parent) ->
     PlayerCache = ets:new(player_cache, [{keypos, #db_player.nym}]),
     self() ! update,
-    ?daemon_tag_log(system, "Render server has been started", []),
+    ?daemon_log_tag_fmt(system, "Render server has been started", []),
     {ok, #state{parent = Parent, player_cache = PlayerCache}}.
 
 message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->

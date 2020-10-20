@@ -10,7 +10,7 @@
 -export([stop_generating_mails/0]).
 -export([target_received_message/2]).
 
--include_lib("apptools/include/log.hrl").
+-include_lib("obscrete/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("player/include/player_serv.hrl").
@@ -188,7 +188,7 @@ init(Parent) ->
     %% Create timers
     erlang:send_after(?SIMULATION_TIME, self(), simulation_ended),
     erlang:send_after(?STOP_GENERATING_MAIL_TIME, self(), stop_generating_mail),
-    ?daemon_tag_log(system, "Master server has been started", []),
+    ?daemon_log_tag_fmt(system, "Master server has been started", []),
     {ok, #state{parent = Parent,
                 players = AllPlayers,
                 meters_to_degrees = MetersToDegrees}}.
@@ -269,11 +269,11 @@ message_handler(#state{parent = Parent,
               fun(#player{player_serv_pid = PlayerServPid}) ->
                       player_serv:stop_generating_mail(PlayerServPid)
               end, Players),
-            ?daemon_tag_log(system, "No more mails are generated", []),
+            ?daemon_log_tag_fmt(system, "No more mails are generated", []),
             noreply;
         {cast, {target_received_message, TargetNym, SourceNym}} ->
             ok = ping(),
-            ?daemon_tag_log(system, "Target received message", []),
+            ?daemon_log_tag_fmt(system, "Target received message", []),
             {found, #player{player_serv_pid = TargetPlayerServPid}} =
                 get_player(TargetNym, Players),
             player_serv:become_nothing(TargetPlayerServPid),
@@ -296,10 +296,10 @@ message_handler(#state{parent = Parent,
             lists:foreach(fun(#player{player_serv_pid = PlayerServPid}) ->
                                   player_serv:pause(PlayerServPid)
                           end, Players),
-            ?daemon_tag_log(system, "Simulation paused", []),
+            ?daemon_log_tag_fmt(system, "Simulation paused", []),
             ok = stats_db:save(),
             ok = stats_db:analyze(),
-            ?daemon_tag_log(system, "Analysis performed", []),
+            ?daemon_log_tag_fmt(system, "Analysis performed", []),
             noreply;
         {system, From, Request} ->
             {system, From, Request};
@@ -315,20 +315,20 @@ elect_source_and_target(
   #player{nym = SourceNym, player_serv_pid = SourcePlayerServPid},
   #player{nym = TargetNym, player_serv_pid = TargetPlayerServPid}) ->
     ok = player_serv:become_source(SourcePlayerServPid, TargetNym, MessageId),
-    ?daemon_tag_log(system,
-                    "~s has been elected as new source (~w)",
-                    [SourceNym, MessageId]),
+    ?daemon_log_tag_fmt(system,
+                        "~s has been elected as new source (~w)",
+                        [SourceNym, MessageId]),
     ok = player_serv:become_target(TargetPlayerServPid, MessageId),
-    ?daemon_tag_log(system,
-                    "~s has been elected as new target (~w)",
-                    [TargetNym, MessageId]),
+    ?daemon_log_tag_fmt(system,
+                        "~s has been elected as new target (~w)",
+                        [TargetNym, MessageId]),
     lists:foreach(
       fun(#player{nym = Nym,
                   player_serv_pid = ForwarderPlayerServPid})
             when Nym /= SourceNym andalso Nym /= TargetNym ->
               ok = player_serv:become_forwarder(
                      ForwarderPlayerServPid, MessageId),
-              ?daemon_log(
+              ?daemon_log_fmt(
                  "~s has been elected as new forwarder (~w)",
                  [Nym, MessageId]);
          (#player{nym = _Nym}) ->
