@@ -138,11 +138,13 @@ message_handler(S=#state{parent = Parent }) ->
 		      Xi = Kx*X0 - Cx,
 		      Yi = Ky*Y0 - Cy,
 		      lists:foreach(
-			fun(N) ->
+			fun({N,up}) ->
 				{X1,Y1} = interp(N,T,Pos0,Pos1),
 				Xj = Kx*X1 - Cx,
 				Yj = Ky*Y1 - Cy,
-				epx:draw_line(Px, Xi, Yi, Xj, Yj)
+				epx:draw_line(Px, Xi, Yi, Xj, Yj);
+			   ({_N,_}) ->
+				ok
 			end, Ns)
 	      end, ok),
 	    %% draw nodes
