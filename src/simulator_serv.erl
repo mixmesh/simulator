@@ -28,6 +28,9 @@
 -define(POP3_IP_ADDRESS, {127, 0, 0, 1}).
 -define(POP3_PORT, 32000).
 
+-define(HTTP_IP_ADDRESS, {127, 0, 0, 1}).
+-define(HTTP_PORT, 48000).
+
 -define(PKI_IP_ADDRESS, {127, 0, 0, 1}).
 -define(PKI_PORT, 11112).
 
@@ -114,9 +117,9 @@ init(Parent) ->
     true = stats_db:new(),
     %% Start simulated players
     LocationIndex = SimulatorModule:get_location_index(),
-    {_, _, _, AllPlayers} =
+    {_, _, _, _, AllPlayers} =
         lists:foldl(
-          fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, Players}) ->
+          fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, HttpPort, Players}) ->
                   PlayerDir =
                       filename:join(["/tmp/obscrete/players", Nym, "player"]),
                   TempDir = filename:join([PlayerDir, "temp"]),
@@ -140,6 +143,9 @@ init(Parent) ->
                   %% baz
                   Pop3PasswordDigest =
                       <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97, 183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
+                  HttpCertFilename =
+                      filename:join([PlayerDir, "ssl", "cert.pem"]),
+                  HttpPassword = <<"hello">>,
                   LocalPkiServerDataDir =
                       filename:join([PlayerDir, "pki", "data"]),
                   %%PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
@@ -164,6 +170,9 @@ init(Parent) ->
                             pop3_address = {?POP3_IP_ADDRESS, Pop3Port},
                             pop3_cert_filename = Pop3CertFilename,
                             pop3_password_digest = Pop3PasswordDigest,
+                            http_address = {?HTTP_IP_ADDRESS, HttpPort},
+                            http_cert_filename = HttpCertFilename,
+                            http_password = HttpPassword,
                             local_pki_server_data_dir = LocalPkiServerDataDir,
                             pki_mode = PkiMode}]),
                   {ok, PlayerServPid} =
@@ -172,14 +181,14 @@ init(Parent) ->
                       get_child_pid(PlayerSupPid, nodis_serv),
                   %%ok = player_serv:add_dummy_messages(
                   %%       player_serv_pid, rand:uniform(50)),
-                  {SyncPort + 1, SmtpPort + 1, Pop3Port + 1,
+                  {SyncPort + 1, SmtpPort + 1, Pop3Port + 1, HttpPort +1,
                    [#player{nym = Nym,
                             player_serv_pid = PlayerServPid,
                             nodis_serv_pid = NodisServPid,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
                             smtp_address = {?SMTP_IP_ADDRESS, SmtpPort}}|
                     Players]}
-          end, {?SYNC_PORT, ?SMTP_PORT, ?POP3_PORT, []}, LocationIndex),
+          end, {?SYNC_PORT, ?SMTP_PORT, ?POP3_PORT, ?HTTP_PORT, []}, LocationIndex),
     ok = pick_random_source(AllPlayers),
     %% Order players to start location updating
     lists:foreach(fun(#player{player_serv_pid = PlayerServPid}) ->
