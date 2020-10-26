@@ -128,7 +128,6 @@ message_handler(S=#state{parent = Parent }) ->
 	    Ky = Sy, Cy = Sy*MinY,
 	    epx:pixmap_fill(Px, S#state.color),
 	    %% draw neighbour connections
-	    epx_gc:set_foreground_color(black),
 	    Pos0 = S#state.pos0,
 	    Pos1 = S#state.pos1,
 
@@ -139,6 +138,14 @@ message_handler(S=#state{parent = Parent }) ->
 		      Yi = Ky*Y0 - Cy,
 		      lists:foreach(
 			fun({N,up}) ->
+				epx_gc:set_foreground_color(black),
+				{X1,Y1} = interp(N,T,Pos0,Pos1),
+				Xj = Kx*X1 - Cx,
+				Yj = Ky*Y1 - Cy,
+				Cnt = count(Nym, N),
+				draw_dashed_line(Px, Xi, Yi, Xj, Yj, Cnt, 5);
+			   ({N,pending}) ->
+				epx_gc:set_foreground_color(lightgray),
 				{X1,Y1} = interp(N,T,Pos0,Pos1),
 				Xj = Kx*X1 - Cx,
 				Yj = Ky*Y1 - Cy,
@@ -198,10 +205,43 @@ message_handler(S=#state{parent = Parent }) ->
             noreply
     end.
 
+count(A, B) ->
+    Key = [A|B],
+    Cnt = case get(Key) of
+	      undefined -> 1;
+	      N -> N+1
+	  end,
+    put(Key, Cnt),
+    Cnt.
+
 interp(Nym,T,Pos0,Pos1) ->
     {X0,Y0} = maps:get(Nym,Pos0,{0,0}),
     {X1,Y1} = maps:get(Nym,Pos1,{0,0}),
     {X0+(X1-X0)*T, Y0+(Y1-Y0)*T}.
+
+-define(ANIM_BITS, 3).
+draw_dashed_line(Px, X0, Y0, X1, Y1, Cnt, SegLen) ->
+    Dx = (X1-X0),
+    Dy = (Y1-Y0),
+    Len = math:sqrt(Dx*Dx + Dy*Dy),
+    N = max(1, round(Len / SegLen)),
+    C = Cnt band ((1 bsl ?ANIM_BITS)-1),
+    Dl = 1/N,
+    L0 = C*(Dl / (1 bsl ?ANIM_BITS)),
+    draw_segments(1, N, L0, 1/N, Px, X0, Y0, X0, Y0, Dx, Dy).
+
+draw_segments(I, N, L, Dl, Px, X0, Y0, X1, Y1, Dx, Dy) ->
+    if I > N -> ok;
+       true ->
+	    X2 = X0 + Dx*L,
+	    Y2 = Y0 + Dy*L,
+	    if (I band 1) =:= 1 ->
+		    epx:draw_line(Px, X1, Y1, X2, Y2);
+	       true -> ok
+	    end,
+	    draw_segments(I+1, N, L+Dl, Dl, Px, X0, Y0, X2, Y2, Dx, Dy)
+    end.
+
 
 %% Get target positions
 get_positions() ->
