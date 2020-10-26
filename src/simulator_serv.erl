@@ -115,6 +115,9 @@ init(Parent) ->
     MetersToDegrees = fun SimulatorModule:meters_to_degrees/1,
     true = player_db:new(),
     true = stats_db:new(),
+    %% FIXME: find a place
+    ets:new(endpoint_reg,[public, named_table, {write_concurrency, true}]),
+
     %% Start simulated players
     LocationIndex = SimulatorModule:get_location_index(),
     {_, _, _, _, AllPlayers} =
