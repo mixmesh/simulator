@@ -139,6 +139,7 @@ message_handler(S=#state{parent = Parent }) ->
 		      lists:foreach(
 			fun({N,up}) ->
 				epx_gc:set_foreground_color(black),
+				epx_gc:set_fill_color(black),
 				{X1,Y1} = interp(N,T,Pos0,Pos1),
 				Xj = Kx*X1 - Cx,
 				Yj = Ky*Y1 - Cy,
@@ -223,25 +224,39 @@ interp(Nym,T,Pos0,Pos1) ->
 draw_dashed_line(Px, X0, Y0, X1, Y1, Cnt, SegLen) ->
     Dx = (X1-X0),
     Dy = (Y1-Y0),
+    A  = math:atan2(Dy,Dx),
+    A1 = A-(math:pi()/2),
+    A2 = A+(math:pi()/2),
+    Ad1 = {3*math:cos(A1), 3*math:sin(A1)},
+    Ad2 = {3*math:cos(A2), 3*math:sin(A2)},
+    Ad = {Ad1,Ad2},
     Len = math:sqrt(Dx*Dx + Dy*Dy),
     N = max(1, round(Len / SegLen)),
-    C = Cnt band ((1 bsl ?ANIM_BITS)-1),
+    MaxCnt = ((1 bsl ?ANIM_BITS)-1),
+    C = MaxCnt - (Cnt band MaxCnt),
     Dl = 1/N,
     L0 = C*(Dl / (1 bsl ?ANIM_BITS)),
-    draw_segments(1, N, L0, 1/N, Px, X0, Y0, X0, Y0, Dx, Dy).
+    draw_segments(1, N, L0, 1/N, Px, X0, Y0, X0, Y0, Dx, Dy, Ad).
 
-draw_segments(I, N, L, Dl, Px, X0, Y0, X1, Y1, Dx, Dy) ->
+draw_segments(I, N, L, Dl, Px, X0, Y0, X1, Y1, Dx, Dy,Ad) ->
     if I > N -> ok;
        true ->
 	    X2 = X0 + Dx*L,
 	    Y2 = Y0 + Dy*L,
 	    if (I band 1) =:= 1 ->
-		    epx:draw_line(Px, X1, Y1, X2, Y2);
+		    draw_arrow(Px, X1, Y1, X2, Y2, Ad);
+	       %% epx:draw_line(Px, X1, Y1, X2, Y2);
 	       true -> ok
 	    end,
-	    draw_segments(I+1, N, L+Dl, Dl, Px, X0, Y0, X2, Y2, Dx, Dy)
+	    draw_segments(I+1, N, L+Dl, Dl, Px, X0, Y0, X2, Y2, Dx, Dy, Ad)
     end.
 
+draw_arrow(Px, X1, Y1, X2, Y2, {{Ad1x,Ad1y},{Ad2x,Ad2y}}) ->
+    P0 = {X1,Y1},
+    P1 = {X2-Ad1x, Y2-Ad1y},
+    P2 = {X2-Ad2x, Y2-Ad2y},
+    epx:draw_triangle(Px, P0, P1, P2).
+    
 
 %% Get target positions
 get_positions() ->

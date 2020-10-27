@@ -93,8 +93,9 @@ inform_players(Tree,
     NewNeighbours = get_neighbours(Tree, NeighbourDistance, Nym),
     lists:foreach(
       fun(#player{sync_address = {SyncIpAddress, SyncPort}}) ->
+	      OutPort = SyncPort+1,  %% simulate outport
               ok = nodis_serv:simping(
-                     NodisServPid, SyncIpAddress, SyncPort,
+                     NodisServPid, SyncIpAddress, OutPort,
                      ?UPDATE_TIME)
       end, NewNeighbours),
     [{Player, NewNeighbours}|inform_players(Tree, Rest, NeighbourDistance)].

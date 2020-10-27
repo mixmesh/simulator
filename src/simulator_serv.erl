@@ -116,10 +116,11 @@ init(Parent) ->
     true = player_db:new(),
     true = stats_db:new(),
     %% FIXME: find a place
-    ets:new(endpoint_reg,[public, named_table, {write_concurrency, true}]),
+    %% ets:new(endpoint_reg,[public, named_table, {write_concurrency, true}]),
 
-    %% Start simulated players
-    LocationIndex = SimulatorModule:get_location_index(),
+    %% Start simulated players - 
+    %% reverse to get player index match port number (and sync order)
+    LocationIndex = lists:reverse(SimulatorModule:get_location_index()),
     {_, _, _, _, AllPlayers} =
         lists:foldl(
           fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, HttpPort, Players}) ->
@@ -184,7 +185,7 @@ init(Parent) ->
                       get_child_pid(PlayerSupPid, nodis_serv),
                   %%ok = player_serv:add_dummy_messages(
                   %%       player_serv_pid, rand:uniform(50)),
-                  {SyncPort + 1, SmtpPort + 1, Pop3Port + 1, HttpPort +1,
+                  {SyncPort + 2, SmtpPort + 1, Pop3Port + 1, HttpPort +1,
                    [#player{nym = Nym,
                             player_serv_pid = PlayerServPid,
                             nodis_serv_pid = NodisServPid,
