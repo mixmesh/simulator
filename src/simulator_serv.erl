@@ -120,7 +120,8 @@ init(Parent) ->
 
     %% Start simulated players - 
     %% reverse to get player index match port number (and sync order)
-    LocationIndex = lists:reverse(SimulatorModule:get_location_index()),
+    %% LocationIndex = lists:reverse(SimulatorModule:get_location_index()),
+    LocationIndex = SimulatorModule:get_location_index(),
     {_, _, _, _, AllPlayers} =
         lists:foldl(
           fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, HttpPort, Players}) ->
