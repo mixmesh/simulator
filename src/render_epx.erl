@@ -157,14 +157,24 @@ message_handler(S=#state{parent = Parent }) ->
 	      end, ok),
 	    %% draw nodes
 	    player_db:foldl(
-	      fun(#db_player{nym=Nym}, _Acc) ->
+	      fun(#db_player{pick_mode=Mode,nym=Nym}, _Acc) ->
 		      {X0,Y0} = interp(Nym,T,Pos0,Pos1),
 		      X = Kx*X0 - Cx,
 		      Y = Ky*Y0 - Cy,
 		      %% io:format("draw pos = ~p\n", [{X,Y}]),
 		      epx_gc:set_fill_style(solid),
-		      epx_gc:set_fill_color(red),
-		      epx:draw_ellipse(Px, X-3, Y-3, 6, 6),
+		      %% epx_gc:set_fill_color(red);
+		      case Mode of
+			  is_nothing ->
+			      epx_gc:set_fill_color(16#D7D6D5);
+			  {is_forwarder,_} ->
+			      epx_gc:set_fill_color(16#E0C3FF);
+			  {is_source,_} ->
+			      epx_gc:set_fill_color(16#B40000);
+			  {is_target,_} ->
+			      epx_gc:set_fill_color(16#14AAFF)
+		      end,
+		      epx:draw_ellipse(Px, X-4, Y-4, 8, 8),
 		      %% precompute!?
 		      String = binary_to_list(Nym),
 		      {W,H} = epx_font:dimension(Font, String),

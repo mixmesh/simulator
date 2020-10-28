@@ -25,7 +25,7 @@ get() ->
        {'data-set',
         #json_type{
            name = atom,
-           info = "circle, square, epfl, roma or it",
+           info = "circle, square, epfl, roma, mesh or it",
            typical = square,
            convert =
                fun(square) -> square;
@@ -33,9 +33,11 @@ get() ->
                   (circle) -> dummy_circle;
                   (roma) -> roma_taxi;
                   (it) -> it_vr2marketbaiaotrial;
+		  (mesh) -> mesh;
                   (_) ->
                        throw(
                          {failed,
-                          "Must be one of circle, square, epfl, roma or it"})
+                          "Must be one of circle, square, epfl, "
+			  "roma, it or mesh"})
                end,
            reloadable = false}}]}].

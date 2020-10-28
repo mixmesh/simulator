@@ -23,7 +23,9 @@ get_location_index("epfl") ->
 get_location_index("roma") ->
     roma_taxi:get_location_index();
 get_location_index("it") ->
-    it_vr2marketbaiaotrial:get_location_index().
+    it_vr2marketbaiaotrial:get_location_index();
+get_location_index("mesh") ->
+    mesh:get_location_index().
 
 create_players(_SourceCertFilename, _PlayersDir, []) ->
     ok;

@@ -11,3 +11,12 @@ Alice
 swaks --from alice@obscrete.net --to alice@obscrete.net --server 127.0.0.1:19900 --auth LOGIN --auth-user alice --tls-on-connect --auth-password baz --body "FOO"
 
 mpop --debug --host=127.0.0.1 --port=29900 --deliver=mbox,fnutt --keep=on --auth=user --user=alice --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
+
+
+MESH
+p11/p88
+=======
+
+swaks --from p11@obscrete.net --to p88@obscrete.net --server 127.0.0.1:16000 --auth LOGIN --auth-user p11 --tls-on-connect --auth-password baz --body "FOO"
+
+mpop --debug --host=127.0.0.1 --port=32063 --deliver=mbox,fnutt --keep=on --auth=user --user=p88 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
