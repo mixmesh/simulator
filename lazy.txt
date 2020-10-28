@@ -17,6 +17,6 @@ MESH
 p11/p88
 =======
 
-swaks --from p11@obscrete.net --to p88@obscrete.net --server 127.0.0.1:16000 --auth LOGIN --auth-user p11 --tls-on-connect --auth-password baz --body "FOO"
+swaks --from p11@obscrete.net --to p88@obscrete.net --server 127.0.0.1:16063 --auth LOGIN --auth-user p11 --tls-on-connect --auth-password baz --body "FOO"
 
-mpop --debug --host=127.0.0.1 --port=32063 --deliver=mbox,fnutt --keep=on --auth=user --user=p88 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
+mpop --debug --host=127.0.0.1 --port=32000 --deliver=mbox,fnutt --keep=on --auth=user --user=p88 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
