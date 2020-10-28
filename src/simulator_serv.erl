@@ -118,7 +118,7 @@ init(Parent) ->
     %% FIXME: find a place
     %% ets:new(endpoint_reg,[public, named_table, {write_concurrency, true}]),
 
-    %% Start simulated players - 
+    %% Start simulated players -
     %% reverse to get player index match port number (and sync order)
     %% LocationIndex = lists:reverse(SimulatorModule:get_location_index()),
     LocationIndex = SimulatorModule:get_location_index(),
