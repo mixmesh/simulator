@@ -8,11 +8,11 @@
 start([SourceCertFilename, DataSet]) ->
     ObscreteDir = <<"/tmp/obscrete">>,
     PkiDataDir = filename:join([ObscreteDir, <<"pki">>, <<"data">>]),
-    ok = mkconfig:ensure_libs([PkiDataDir], true),
+    true = mkconfig:ensure_libs(command, [PkiDataDir], true),
     PlayersDir = filename:join([ObscreteDir, "players"]),
-    create_players(SourceCertFilename, PlayersDir,
-                   get_location_index(DataSet)),
-    mkconfig:return(0).
+    ok = create_players(SourceCertFilename, PlayersDir,
+                        get_location_index(DataSet)),
+    mkconfig:return(command, 0).
 
 get_location_index("square") ->
     square:get_location_index();
@@ -37,12 +37,13 @@ create_players(SourceCertFilename, PlayersDir, [{Nym, _}|Rest]) ->
     PlayerMaildropSpoolerDir =
         filename:join([PlayerDir, "maildrop", "spooler"]),
     PlayerSSLDir = filename:join([PlayerDir, "ssl"]),
-    mkconfig:ensure_libs(
-      [PlayerTempDir,
-       PlayerBufferDir,
-       PlayerPkiDataDir,
-       PlayerMaildropSpoolerDir,
-       PlayerSSLDir], true),
+    true = mkconfig:ensure_libs(
+             command,
+             [PlayerTempDir,
+              PlayerBufferDir,
+              PlayerPkiDataDir,
+              PlayerMaildropSpoolerDir,
+              PlayerSSLDir], true),
     TargetCertFilename = filename:join([PlayerDir, "ssl", "cert.pem"]),
     io:format("Copies ~s to ~s\n", [SourceCertFilename, TargetCertFilename]),
     case file:copy(SourceCertFilename, TargetCertFilename) of
@@ -51,5 +52,5 @@ create_players(SourceCertFilename, PlayersDir, [{Nym, _}|Rest]) ->
         {error, Reason} ->
             io:format(standard_error, "~s: ~s\n",
                       [SourceCertFilename, file:format_error(Reason)]),
-            mkconfig:return(100)
+            mkconfig:return(command, 100)
     end.

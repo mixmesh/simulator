@@ -138,18 +138,12 @@ init(Parent) ->
                   DegreesToMeters = fun SimulatorModule:degrees_to_meters/1,
                   MaildropSpoolerDir =
                       filename:join([PlayerDir, "maildrop", "spooler"]),
-                  SmtpCertFilename =
-                      filename:join([PlayerDir, "ssl", "cert.pem"]),
                   %% baz
                   SmtpPasswordDigest =
                       <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97, 183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
-                  Pop3CertFilename =
-                      filename:join([PlayerDir, "ssl", "cert.pem"]),
                   %% baz
                   Pop3PasswordDigest =
                       <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97, 183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
-                  HttpCertFilename =
-                      filename:join([PlayerDir, "ssl", "cert.pem"]),
                   HttpPassword = <<"hello">>,
                   %%PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
                   PkiMode = local,
@@ -169,13 +163,10 @@ init(Parent) ->
                             degrees_to_meters = DegreesToMeters,
                             spooler_dir = MaildropSpoolerDir,
                             smtp_address = {?SMTP_IP_ADDRESS, SmtpPort},
-                            smtp_cert_filename = SmtpCertFilename,
                             smtp_password_digest = SmtpPasswordDigest,
                             pop3_address = {?POP3_IP_ADDRESS, Pop3Port},
-                            pop3_cert_filename = Pop3CertFilename,
                             pop3_password_digest = Pop3PasswordDigest,
                             http_address = {?HTTP_IP_ADDRESS, HttpPort},
-                            http_cert_filename = HttpCertFilename,
                             http_password = HttpPassword,
                             pki_mode = PkiMode}]),
                   {ok, PlayerServPid} =
