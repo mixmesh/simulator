@@ -125,8 +125,8 @@ init(Parent) ->
     {_, _, _, _, AllPlayers} =
         lists:foldl(
           fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, HttpPort, Players}) ->
-                  PlayerDir =
-                      filename:join(["/tmp/obscrete/players", Nym, "player"]),
+                  ObscreteDir = <<"/tmp/obscrete/players">>,
+                  PlayerDir = filename:join([ObscreteDir, Nym, "player"]),
                   TempDir = filename:join([PlayerDir, "temp"]),
                   BufferDir = filename:join([PlayerDir, "buffer"]),
                   Keys = elgamal:generate_key_pair(
@@ -151,14 +151,13 @@ init(Parent) ->
                   HttpCertFilename =
                       filename:join([PlayerDir, "ssl", "cert.pem"]),
                   HttpPassword = <<"hello">>,
-                  LocalPkiServerDataDir =
-                      filename:join([PlayerDir, "pki", "data"]),
                   %%PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
                   PkiMode = local,
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
                         [#simulated_player_serv_config{
+                            obscrete_dir = ObscreteDir,
                             nym = Nym,
                             pki_password = <<"baz">>,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
@@ -178,7 +177,6 @@ init(Parent) ->
                             http_address = {?HTTP_IP_ADDRESS, HttpPort},
                             http_cert_filename = HttpCertFilename,
                             http_password = HttpPassword,
-                            local_pki_server_data_dir = LocalPkiServerDataDir,
                             pki_mode = PkiMode}]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
