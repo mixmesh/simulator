@@ -173,8 +173,6 @@ init(Parent) ->
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =
                       get_child_pid(PlayerSupPid, nodis_serv),
-                  %%ok = player_serv:add_dummy_messages(
-                  %%       player_serv_pid, rand:uniform(50)),
                   {SyncPort + 2, SmtpPort + 1, Pop3Port + 1, HttpPort +1,
                    [#player{nym = Nym,
                             player_serv_pid = PlayerServPid,
