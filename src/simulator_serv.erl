@@ -7,7 +7,6 @@
 -export([meters_to_degrees/1]).
 -export([pause_player/0, pause_player/1]).
 -export([resume_player/0, resume_player/1]).
--export([stop_generating_mails/0]).
 -export([target_received_message/2]).
 
 -include_lib("apptools/include/log.hrl").
@@ -16,8 +15,6 @@
 -include_lib("player/include/player_serv.hrl").
 
 -define(SIMULATION_TIME, (1000 * 60 * 60 * 10)).
-
--define(STOP_GENERATING_MAIL_TIME, trunc(?SIMULATION_TIME / 2)).
 
 -define(SYNC_IP_ADDRESS, {127, 0, 0, 1}).
 -define(SYNC_PORT, 4000).
@@ -94,11 +91,6 @@ resume_player() ->
 
 resume_player(Nym) ->
     serv:cast(?MODULE, {resume_player, Nym}).
-
-%% Exported: stop_generating_mails
-
-stop_generating_mails() ->
-    serv:cast(?MODULE, stop_generating_mails).
 
 %% Exported: target_received_message
 
@@ -188,7 +180,6 @@ init(Parent) ->
                   end, AllPlayers),
     %% Create timers
     erlang:send_after(?SIMULATION_TIME, self(), simulation_ended),
-    erlang:send_after(?STOP_GENERATING_MAIL_TIME, self(), stop_generating_mail),
     ?daemon_log_tag_fmt(system, "Master server has been started", []),
     {ok, #state{parent = Parent,
                 players = AllPlayers,
@@ -265,13 +256,6 @@ message_handler(#state{parent = Parent,
                 not_found ->
                     noreply
             end;
-        {cast, stop_generating_mail} ->
-            lists:foreach(
-              fun(#player{player_serv_pid = PlayerServPid}) ->
-                      player_serv:stop_generating_mail(PlayerServPid)
-              end, Players),
-            ?daemon_log_tag_fmt(system, "No more mails are generated", []),
-            noreply;
         {cast, {target_received_message, TargetNym, SourceNym}} ->
             ok = ping(),
             ?daemon_log_tag_fmt(system, "Target received message", []),
