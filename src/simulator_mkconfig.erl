@@ -3,13 +3,15 @@
 
 -include_lib("apptools/include/shorthand.hrl").
 
+%% Exported: start
+
 -spec start([string()]) -> no_return().
 
 start([SourceCertFilename, DataSet]) ->
     ObscreteDir = <<"/tmp/obscrete">>,
-    PkiDataDir = filename:join([ObscreteDir, <<"pki">>, <<"data">>]),
-    true = mkconfig:ensure_libs(command, [PkiDataDir], true),
-    PlayersDir = filename:join([ObscreteDir, "players"]),
+    GlobalPkiDir = filename:join([ObscreteDir, <<"global-pki">>]),
+    true = mkconfig:ensure_libs(command, [GlobalPkiDir], true),
+    PlayersDir = filename:join([ObscreteDir, <<"players">>]),
     ok = create_players(SourceCertFilename, PlayersDir,
                         get_location_index(DataSet)),
     mkconfig:return(command, 0).
@@ -30,27 +32,5 @@ get_location_index("mesh") ->
 create_players(_SourceCertFilename, _PlayersDir, []) ->
     ok;
 create_players(SourceCertFilename, PlayersDir, [{Nym, _}|Rest]) ->
-    PlayerDir = filename:join([PlayersDir, Nym, <<"player">>]),
-    PlayerTempDir = filename:join([PlayerDir, "temp"]),
-    PlayerBufferDir = filename:join([PlayerDir, "buffer"]),
-    PlayerPkiDataDir = filename:join([PlayerDir, "pki", "data"]),
-    PlayerMaildropSpoolerDir =
-        filename:join([PlayerDir, "maildrop", "spooler"]),
-    PlayerSSLDir = filename:join([PlayerDir, "ssl"]),
-    true = mkconfig:ensure_libs(
-             command,
-             [PlayerTempDir,
-              PlayerBufferDir,
-              PlayerPkiDataDir,
-              PlayerMaildropSpoolerDir,
-              PlayerSSLDir], true),
-    TargetCertFilename = filename:join([PlayerDir, "ssl", "cert.pem"]),
-    io:format("Copies ~s to ~s\n", [SourceCertFilename, TargetCertFilename]),
-    case file:copy(SourceCertFilename, TargetCertFilename) of
-        {ok, _} ->
-            create_players(SourceCertFilename, PlayersDir, Rest);
-        {error, Reason} ->
-            io:format(standard_error, "~s: ~s\n",
-                      [SourceCertFilename, file:format_error(Reason)]),
-            mkconfig:return(command, 100)
-    end.
+    mkconfig:create_player(PlayersDir, SourceCertFilename, ?b2l(Nym), command),
+    create_players(SourceCertFilename, PlayersDir, Rest).

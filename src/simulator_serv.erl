@@ -117,7 +117,7 @@ init(Parent) ->
     {_, _, _, _, AllPlayers} =
         lists:foldl(
           fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, HttpPort, Players}) ->
-                  ObscreteDir = <<"/tmp/obscrete/players">>,
+                  PlayersDir = <<"/tmp/obscrete/players">>,
                   Keys = elgamal:generate_key_pair(
                            Nym, binary:decode_unsigned(Nym)),
                   GetLocationGenerator =
@@ -138,7 +138,7 @@ init(Parent) ->
                       supervisor:start_child(
                         simulator_players_sup,
                         [#simulated_player_serv_config{
-                            obscrete_dir = ObscreteDir,
+                            players_dir = PlayersDir,
                             nym = Nym,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
                             keys = Keys,
