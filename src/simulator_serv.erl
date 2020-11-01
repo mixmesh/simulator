@@ -118,9 +118,6 @@ init(Parent) ->
         lists:foldl(
           fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, HttpPort, Players}) ->
                   ObscreteDir = <<"/tmp/obscrete/players">>,
-                  PlayerDir = filename:join([ObscreteDir, Nym, "player"]),
-                  TempDir = filename:join([PlayerDir, "temp"]),
-                  BufferDir = filename:join([PlayerDir, "buffer"]),
                   Keys = elgamal:generate_key_pair(
                            Nym, binary:decode_unsigned(Nym)),
                   GetLocationGenerator =
@@ -128,8 +125,6 @@ init(Parent) ->
                               SimulatorModule:get_location_generator(Opaque)
                       end,
                   DegreesToMeters = fun SimulatorModule:degrees_to_meters/1,
-                  MaildropSpoolerDir =
-                      filename:join([PlayerDir, "maildrop", "spooler"]),
                   %% baz
                   SmtpPasswordDigest =
                       <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97, 183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
@@ -137,7 +132,7 @@ init(Parent) ->
                   Pop3PasswordDigest =
                       <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97, 183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
                   HttpPassword = <<"hello">>,
-                  %%PkiMode = {global, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
+                  %%PkiMode = {global, <<"baz">>, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
                   PkiMode = local,
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
@@ -145,15 +140,11 @@ init(Parent) ->
                         [#simulated_player_serv_config{
                             obscrete_dir = ObscreteDir,
                             nym = Nym,
-                            pki_password = <<"baz">>,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
-                            temp_dir = TempDir,
-                            buffer_dir = BufferDir,
                             keys = Keys,
                             f = ?F,
                             get_location_generator = GetLocationGenerator,
                             degrees_to_meters = DegreesToMeters,
-                            spooler_dir = MaildropSpoolerDir,
                             smtp_address = {?SMTP_IP_ADDRESS, SmtpPort},
                             smtp_password_digest = SmtpPasswordDigest,
                             pop3_address = {?POP3_IP_ADDRESS, Pop3Port},
