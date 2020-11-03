@@ -10,11 +10,16 @@
 start([SourceCertFilename, DataSet]) ->
     ObscreteDir = <<"/tmp/obscrete">>,
     GlobalPkiDir = filename:join([ObscreteDir, <<"global-pki">>]),
-    true = mkconfig:ensure_libs(command, [GlobalPkiDir], true),
-    PlayersDir = filename:join([ObscreteDir, <<"players">>]),
-    ok = create_players(SourceCertFilename, PlayersDir,
-                        get_location_index(DataSet)),
-    mkconfig:return(command, 0).
+    try
+        true = mkconfig:ensure_libs(stdout, [GlobalPkiDir], true),
+        PlayersDir = filename:join([ObscreteDir, <<"players">>]),
+        ok = create_players(SourceCertFilename, PlayersDir,
+                            get_location_index(DataSet)),
+        erlang:halt(0)
+    catch
+        throw:{status, Status} ->
+            erlang:halt(Status)
+    end.
 
 get_location_index("square") ->
     square:get_location_index();
@@ -32,5 +37,6 @@ get_location_index("mesh") ->
 create_players(_SourceCertFilename, _PlayersDir, []) ->
     ok;
 create_players(SourceCertFilename, PlayersDir, [{Nym, _}|Rest]) ->
-    mkconfig:create_player(PlayersDir, SourceCertFilename, ?b2l(Nym), command),
+    mkconfig:create_player(
+      stdout, PlayersDir, SourceCertFilename, ?b2l(Nym)),
     create_players(SourceCertFilename, PlayersDir, Rest).
