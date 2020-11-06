@@ -19,13 +19,15 @@ mesh_point(I,J) ->
     iolist_to_binary(io_lib:format("p~w~w", [I,J])).
 
 get_location_index() ->
+    %% fixme: read NPLAYER and vary the mesh size!
+    N = 8,  %% mesh is NxN
     {MinX, MaxX, MinY, MaxY} = get_area(),
-    Dx = (MaxX - MinX)/10,
-    Dy = (MaxY - MinY)/10,
+    Dx = (MaxX - MinX)/(N+2),
+    Dy = (MaxY - MinY)/(N+2),
     OffsX = 0, %% Dx/15,
     OffsY = 0, %% Dy/15,
     [ {mesh_point(I,J), {MinX+I*Dx+OffsX, MinY+J*Dy+OffsY, 0, 2}} || 
-	I <- lists:seq(8, 1, -1), J <- lists:seq(8, 1, -1) ].
+	I <- lists:seq(N, 1, -1), J <- lists:seq(N, 1, -1) ].
 
 %% Exported: get_location_generator
 

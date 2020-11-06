@@ -61,9 +61,13 @@ get_location_generator(
 %% Exported: get_location_index
 
 get_location_index() ->
+    N = case os:getenv("NPLAYER") of
+	    false -> 100;
+	    NStr -> list_to_integer(NStr)
+	end,
     Pi2 = math:pi() * 2,
     %%get_location_index(100, Pi2 / 512, true, 1, true) %% ~10km/h
-    get_location_index(100, Pi2 / 128, true, 1, true). %% ~50km/h
+    get_location_index(N, Pi2 / 128, true, 1, true). %% ~50km/h
 
 get_location_index(Players,
                    DeltaAngle, RandomizeDeltaAngle,
