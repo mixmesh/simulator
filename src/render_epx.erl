@@ -166,13 +166,15 @@ message_handler(S=#state{parent = Parent }) ->
 		      %% epx_gc:set_fill_color(red);
 		      case Mode of
 			  is_nothing ->
-			      epx_gc:set_fill_color(16#D7D6D5);
-			  {is_forwarder,_} ->
-			      epx_gc:set_fill_color(16#E0C3FF);
+			      epx_gc:set_fill_color(gray);
+			  {is_forwarder,{message_not_in_buffer,_}} ->
+			      epx_gc:set_fill_color(green);
+			  {is_forwarder,{message_in_buffer,_}} ->
+			      epx_gc:set_fill_color(yellow);
 			  {is_source,_} ->
-			      epx_gc:set_fill_color(16#B40000);
+			      epx_gc:set_fill_color(red);
 			  {is_target,_} ->
-			      epx_gc:set_fill_color(16#14AAFF)
+			      epx_gc:set_fill_color(blue)
 		      end,
 		      epx:draw_ellipse(Px, X-4, Y-4, 8, 8),
 		      %% precompute!?

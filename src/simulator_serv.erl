@@ -102,6 +102,11 @@ target_received_message(TargetNym, SourceNym) ->
 %%
 
 init(Parent) ->
+    %% message_md5 keep track on messages on simulated nodes (like a global server..)
+    ets:new(player_message, [public, named_table]),
+    io:format("player_message table created ~p\n", [ets:info(player_message)]),
+
+
     rand:seed(exsss),
     SimulatorModule = config:lookup([simulator, 'data-set']),
     MetersToDegrees = fun SimulatorModule:meters_to_degrees/1,
