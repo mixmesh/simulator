@@ -5,6 +5,11 @@ swaks --from p42@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16058 --au
 
 mpop --debug --host=127.0.0.1 --port=32092 --deliver=mbox,fnutt --keep=on --auth=user --user=p8 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
 
+p1/p2
+=====
+swaks --from p1@obscrete.net --to p2@obscrete.net --server 127.0.0.1:16019 --auth LOGIN --auth-user p1 --tls-on-connect --auth-password baz --body "FOO"
+
+
 Alice
 =====
 

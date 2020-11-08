@@ -157,7 +157,7 @@ message_handler(S=#state{parent = Parent }) ->
 	      end, ok),
 	    %% draw nodes
 	    player_db:foldl(
-	      fun(#db_player{pick_mode=Mode,nym=Nym}, _Acc) ->
+	      fun(#db_player{pick_mode=Mode,count=Count,nym=Nym}, _Acc) ->
 		      {X0,Y0} = interp(Nym,T,Pos0,Pos1),
 		      X = Kx*X0 - Cx,
 		      Y = Ky*Y0 - Cy,
@@ -178,7 +178,13 @@ message_handler(S=#state{parent = Parent }) ->
 		      end,
 		      epx:draw_ellipse(Px, X-4, Y-4, 8, 8),
 		      %% precompute!?
-		      String = binary_to_list(Nym),
+		      String = 
+			  if Count =:= 0; Count =:= not_set ->
+				  binary_to_list(Nym);
+			     true ->
+				  binary_to_list(Nym)++"("++
+				      integer_to_list(Count) ++ ")"
+			  end,
 		      {W,H} = epx_font:dimension(Font, String),
 		      epx_gc:set_fill_color({215,215,215}),
 		      Lx = X-3-10,

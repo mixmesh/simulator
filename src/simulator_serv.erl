@@ -1,6 +1,6 @@
 -module(simulator_serv).
 -export([start_link/0, stop/0]).
--export([elect_source_and_target/3]).
+-export([elect_target/3]).
 -export([get_players/0]).
 -export([get_player_nyms/1]).
 -export([get_random_player/1]).
@@ -52,9 +52,9 @@ stop() ->
 
 %% Exported: elect_source_and_target
 
-elect_source_and_target(MessageId, SourceNym, TargetNym) ->
+elect_target(MessageMD5, SourceNym, TargetNym) ->
     serv:cast(?MODULE,
-              {elect_source_and_target, MessageId, SourceNym, TargetNym}).
+              {elect_target, MessageMD5,  SourceNym, TargetNym}).
 
 %% Exported: get_players
 
@@ -202,13 +202,11 @@ message_handler(#state{parent = Parent,
     receive
         {call, From, stop} ->
             {stop, From, ok};
-        {cast, {elect_source_and_target, MessageId, SourceNym, TargetNym}} ->
-            {value, SourcePlayer} =
-                lists:keysearch(SourceNym, #player.nym, Players),
+        {cast, {elect_target, MessageMD5,  SourceNym, TargetNym}} ->
             {value, TargetPlayer} =
                 lists:keysearch(TargetNym, #player.nym, Players),
-            ok = elect_source_and_target(
-                   Players, MessageId, SourcePlayer, TargetPlayer),
+            ok = elect_target_(
+                   Players, MessageMD5, SourceNym, TargetPlayer),
             noreply;
         {call, From, get_players} ->
             {reply, From, Players};
@@ -291,27 +289,18 @@ message_handler(#state{parent = Parent,
             noreply
     end.
 
-elect_source_and_target(
-  Players, MessageId,
-  #player{nym = SourceNym, player_serv_pid = SourcePlayerServPid},
+elect_target_(
+  Players,
+  MessageMD5,
+  SourceNym,
   #player{nym = TargetNym, player_serv_pid = TargetPlayerServPid}) ->
-    ok = player_serv:become_source(SourcePlayerServPid, TargetNym, MessageId),
-    ?daemon_log_tag_fmt(system,
-                        "~s has been elected as new source (~w)",
-                        [SourceNym, MessageId]),
-    ok = player_serv:become_target(TargetPlayerServPid, MessageId),
-    ?daemon_log_tag_fmt(system,
-                        "~s has been elected as new target (~w)",
-                        [TargetNym, MessageId]),
+    ok = player_serv:become_target(TargetPlayerServPid, MessageMD5),
     lists:foreach(
       fun(#player{nym = Nym,
                   player_serv_pid = ForwarderPlayerServPid})
             when Nym /= SourceNym andalso Nym /= TargetNym ->
-              ok = player_serv:become_forwarder(
-                     ForwarderPlayerServPid, MessageId),
-              ?daemon_log_fmt(
-                 "~s has been elected as new forwarder (~w)",
-                 [Nym, MessageId]);
+              ok = player_serv:become_forwarder(ForwarderPlayerServPid,
+						MessageMD5);
          (#player{nym = _Nym}) ->
               ok
       end, Players),
