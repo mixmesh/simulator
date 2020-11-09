@@ -213,10 +213,15 @@ void make_label(uplayer_t *up0, rplayer_t *rp0) {
     }
   }
 
-  if (up0->buffer_size != rp0->buffer_size) {
-    char string[128];
-    sprintf(string, "%s:%d", up0->name, up0->buffer_size);
-    S2D_SetText(up0->label, string);
+//  if (up0->buffer_size != rp0->buffer_size) {
+//    char string[128];
+//    sprintf(string, "%s:%d", up0->name, up0->buffer_size);
+//    S2D_SetText(up0->label, string);
+//  }
+  if (up0->count != rp0->count) {
+      char string[128];
+      sprintf(string, "%s:%d", up0->name, up0->count);
+      S2D_SetText(up0->label, string);
   }
 }
 
@@ -302,7 +307,8 @@ void render() {
         draw_neighbour_link(rp[i].x, rp[i].y, neighbour->x, neighbour->y);
       }
 
-      rp[i].buffer_size = up[i]->buffer_size;
+      rp[i].count = up[i]->count;
+      rp[i].buffer_size = up[i]->buffer_size;      
       rp[i].pick_mode = up[i]->pick_mode;
 
       //draw_player(rp[i].x, rp[i].y);

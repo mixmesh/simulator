@@ -4,6 +4,25 @@
 #include <time.h>
 #include "simulator_lib.h"
 
+// Atom macros
+#define ATOM(name) atm_##name
+
+#define DECL_ATOM(name) \
+    ERL_NIF_TERM atm_##name = 0
+
+// require env in context (ugly)
+#define LOAD_ATOM(name)			\
+    atm_##name = enif_make_atom(env,#name)
+
+DECL_ATOM(ok);
+DECL_ATOM(x);
+DECL_ATOM(y);
+DECL_ATOM(neighbours);
+DECL_ATOM(buffer_size);
+DECL_ATOM(count);
+DECL_ATOM(is_zombie);
+DECL_ATOM(pick_mode);
+
 // Variables declared in simulator_lib.c
 
 extern double min_x;
@@ -105,6 +124,7 @@ static ERL_NIF_TERM _add_players(ErlNifEnv* env, int argc,
     up[i]->is_set1 = false;
     up[i]->number_of_neighbours = 0;
     up[i]->label = NULL;
+    up[i]->count = 0;
     up[i]->buffer_size = 0;
     up[i]->is_zombie = false;
     up[i]->pick_mode = IS_NOTHING;
@@ -118,7 +138,7 @@ static ERL_NIF_TERM _add_players(ErlNifEnv* env, int argc,
 
   players = i;
   SDL_UnlockMutex(simulator_lock);
-  return enif_make_atom(env, "ok");
+  return ATOM(ok);
 }
 
 /*
@@ -155,7 +175,7 @@ static ERL_NIF_TERM _initialize(ErlNifEnv* env, int argc,
     rp[i].is_set1 = false;
   }
 
-  return enif_make_atom(env, "ok");
+  return ATOM(ok);
 }
 
 /*
@@ -180,22 +200,15 @@ static ERL_NIF_TERM _update_players(ErlNifEnv* env, int argc,
     int arity;
     const ERL_NIF_TERM *updated_player_tuple;
     if (!enif_get_tuple(env, updated_players_head, &arity,
-                        &updated_player_tuple)) {
-      SDL_UnlockMutex(simulator_lock);
-      return enif_make_badarg(env);
-    }
-    if (arity != 2) {
-      SDL_UnlockMutex(simulator_lock);
-      return enif_make_badarg(env);
-    }
+                        &updated_player_tuple) || (arity != 2))
+	goto badarg;
 
     // Read name
     char name[64];
     if (enif_get_string(env, updated_player_tuple[0], name, 64,
-                        ERL_NIF_LATIN1) < 0) {
-      SDL_UnlockMutex(simulator_lock);
-      return enif_make_badarg(env);
-    }
+                        ERL_NIF_LATIN1) < 0)
+	goto badarg;
+
 
     // Lookup player (must exist!)
     uplayer_t *named_up;
@@ -209,62 +222,40 @@ static ERL_NIF_TERM _update_players(ErlNifEnv* env, int argc,
       // Read {?tag, ?updated_value} tuple
       int arity;
       const ERL_NIF_TERM *updated_value_tuple;
+      ERL_NIF_TERM tag;
+      
       if (!enif_get_tuple(env, updated_values_head, &arity,
-                          &updated_value_tuple)) {
-        SDL_UnlockMutex(simulator_lock);
-        return enif_make_badarg(env);
-      }
-      if (arity != 2) {
-        SDL_UnlockMutex(simulator_lock);
-        return enif_make_badarg(env);
-      }
+                          &updated_value_tuple) || (arity != 2))
+	  goto badarg;
 
-      // Read tag
-      char tag[64];
-      if (enif_get_atom(env, updated_value_tuple[0], tag, 64,
-                        ERL_NIF_LATIN1) < 0) {
-        SDL_UnlockMutex(simulator_lock);
-        return enif_make_badarg(env);
-      }
+      // Read tag      
+      tag = updated_value_tuple[0];
 
-      if (strcmp(tag, "x") == 0) {
+      if (tag == ATOM(x)) {
         // Read x value
         double x;
-        if (!get_double(env, updated_value_tuple[1], &x)) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
+        if (!get_double(env, updated_value_tuple[1], &x))
+	    goto badarg;
 
-        // Note: The next updated value must be y!
+        // Note: The next updated value must be y! (why?)
         assert(enif_get_list_cell(env, updated_values_list,
                                   &updated_values_head, &updated_values_list));
 
         // Read y tuple
-        int arity;
+        int y_arity;
         const ERL_NIF_TERM *y_tuple;
-        if (!enif_get_tuple(env, updated_values_head, &arity, &y_tuple)) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
-        if (arity != 2) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
+        if (!enif_get_tuple(env, updated_values_head, &y_arity, &y_tuple) ||
+	    (y_arity != 2))
+	    goto badarg;
 
-        // Read tag
-        char tag[64];
-        if (enif_get_atom(env, y_tuple[0], tag, 64, ERL_NIF_LATIN1) < 0) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
-        assert(strcmp(tag, "y") == 0);
+        // check y tag
+        if (y_tuple[0] != ATOM(y))
+	    goto badarg;
 
         // Read y value
         double y;
-        if (!get_double(env, y_tuple[1], &y)) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
+        if (!get_double(env, y_tuple[1], &y))
+	    goto badarg;
 
         // Update player's x, y coordinates
         if (!named_up->is_set1) {
@@ -281,7 +272,7 @@ static ERL_NIF_TERM _update_players(ErlNifEnv* env, int argc,
           named_up->ticks1 = ticks;
           named_up->reset_render_interpolation = true;
         }
-      } else if (strcmp(tag, "neighbours") == 0) {
+      } else if (tag == ATOM(neighbours)) {
         // Read list with neighbour names
         ERL_NIF_TERM neighbour_list = updated_value_tuple[1];
         ERL_NIF_TERM neighbour_head;
@@ -291,46 +282,45 @@ static ERL_NIF_TERM _update_players(ErlNifEnv* env, int argc,
           // Read neighbour name
           char name[64];
           if (enif_get_string(env, neighbour_head, name, 64,
-                              ERL_NIF_LATIN1) < 0) {
-            SDL_UnlockMutex(simulator_lock);
-            return enif_make_badarg(env);
-          }
+                              ERL_NIF_LATIN1) < 0)
+	      goto badarg;
+
           uplayer_t *neighbour_up;
           assert(hlookup(name, &neighbour_up));
           named_up->neighbours[n++] = neighbour_up->self_index;
         }
         named_up->number_of_neighbours = n;
-      } else if (strcmp(tag, "buffer_size") == 0) {
+      } else if (tag == ATOM(buffer_size)) {
         // Read buffer_size
-        if (!enif_get_int(env, updated_value_tuple[1], &named_up->buffer_size)) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
-      } else if (strcmp(tag, "is_zombie") == 0) {
+        if (!enif_get_int(env,updated_value_tuple[1],&named_up->buffer_size))
+	    goto badarg;
+      } else if (tag == ATOM(count)) {
+	// Read message match count
+        if (!enif_get_int(env, updated_value_tuple[1], &named_up->count))
+	    goto badarg;
+      } else if (tag == ATOM(is_zombie)) {
         // Read is_zombie
         int i;
-        if (!enif_get_int(env, updated_value_tuple[1], &i)) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
+        if (!enif_get_int(env, updated_value_tuple[1], &i))
+	    goto badarg;
         named_up->is_zombie = i;
-      } else if (strcmp(tag, "pick_mode") == 0) {
+      } else if (tag == ATOM(pick_mode)) {
         // Read pick_mode
         int pick_mode;
-        if (!enif_get_int(env, updated_value_tuple[1], &pick_mode)) {
-          SDL_UnlockMutex(simulator_lock);
-          return enif_make_badarg(env);
-        }
+        if (!enif_get_int(env, updated_value_tuple[1], &pick_mode))
+	    goto badarg;
         named_up->pick_mode = pick_mode;
-      } else {
-        fprintf(stderr, "Unknown tag: %s\n", tag);
-        assert(false);
-      }
+      } else
+	  goto badarg;
     }
   }
   
   SDL_UnlockMutex(simulator_lock);
-  return enif_make_atom(env, "ok");
+  return ATOM(ok);
+
+badarg:
+  SDL_UnlockMutex(simulator_lock);  
+  return enif_make_badarg(env);
 }
 
 // Initialize NIF functions
@@ -348,6 +338,16 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
   // Create mutex used to protect shared variables (see above)
   simulator_lock = SDL_CreateMutex();
 
+  // Load constants
+  LOAD_ATOM(ok);
+  LOAD_ATOM(x);
+  LOAD_ATOM(y);
+  LOAD_ATOM(neighbours);
+  LOAD_ATOM(buffer_size);
+  LOAD_ATOM(count);
+  LOAD_ATOM(is_zombie);
+  LOAD_ATOM(pick_mode);
+  
   // Start main thread
   ErlNifTid *tid = enif_alloc(sizeof(ErlNifTid));
 #if defined(__APPLE__) && defined(__MACH__)

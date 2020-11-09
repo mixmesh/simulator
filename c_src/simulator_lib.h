@@ -51,6 +51,8 @@ typedef struct {
   int neighbours[1024];
   // Label
   S2D_Text *label;
+  // match count
+  int count;
   // Buffer size
   int buffer_size;
   // Is zombie?
@@ -67,6 +69,8 @@ typedef struct {
   double y0;
   Uint32 ticks0;
   bool is_set0;
+  // Match count
+  int count;
   // Buffer size
   int buffer_size;
   // End position

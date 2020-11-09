@@ -52,6 +52,7 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
                          nym = Nym,
                          x = X,
                          y = Y,
+			 count = Count,
                          buffer_size = BufferSize,
                          neighbours = Neighbours1,
                          is_zombie = IsZombie,
@@ -68,13 +69,17 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
                                   Acc;
                               [CachedPlayer] ->
                                   UpdatedValues =
-                                      is_any_updated(
-                                        [x, y], [X, Y],
-                                        [CachedPlayer#db_player.x,
-                                         CachedPlayer#db_player.y]) ++
+				      [{x,X},{y,Y}] ++
+                                      %% is_any_updated(
+                                      %%   [x, y], [X, Y],
+                                      %%   [CachedPlayer#db_player.x,
+                                      %%   CachedPlayer#db_player.y]) ++
                                       is_updated(
                                         buffer_size, BufferSize,
                                         CachedPlayer#db_player.buffer_size) ++
+                                      is_updated(
+                                        count, Count,
+                                        CachedPlayer#db_player.count) ++
                                       is_updated(
                                         neighbours, Neighbours,
                                         CachedPlayer#db_player.neighbours) ++
