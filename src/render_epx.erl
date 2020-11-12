@@ -137,21 +137,21 @@ message_handler(S=#state{parent = Parent }) ->
 		      Xi = Kx*X0 - Cx,
 		      Yi = Ky*Y0 - Cy,
 		      lists:foreach(
-			fun({N,up}) ->
+			fun({N,up,ConState}) ->
 				epx_gc:set_foreground_color(black),
-				epx_gc:set_fill_color(black),
 				{X1,Y1} = interp(N,T,Pos0,Pos1),
 				Xj = Kx*X1 - Cx,
 				Yj = Ky*Y1 - Cy,
 				Cnt = count(Nym, N),
-				draw_dashed_line(Px, Xi, Yi, Xj, Yj, Cnt, 5);
-			   ({N,pending}) ->
+				draw_dashed_line(Px, Xi, Yi, Xj, Yj, 
+						 Cnt, 5, ConState);
+			   ({N,pending,_}) ->
 				epx_gc:set_foreground_color(lightgray),
 				{X1,Y1} = interp(N,T,Pos0,Pos1),
 				Xj = Kx*X1 - Cx,
 				Yj = Ky*Y1 - Cy,
 				epx:draw_line(Px, Xi, Yi, Xj, Yj);
-			   ({_N,_}) ->
+			   ({_N,_,_}) ->
 				ok
 			end, Ns)
 	      end, ok),
@@ -177,7 +177,6 @@ message_handler(S=#state{parent = Parent }) ->
 			      epx_gc:set_fill_color(blue)
 		      end,
 		      epx:draw_ellipse(Px, X-4, Y-4, 8, 8),
-		      %% precompute!?
 		      String = 
 			  if Count =:= 0; Count =:= not_set ->
 				  binary_to_list(Nym);
@@ -185,6 +184,7 @@ message_handler(S=#state{parent = Parent }) ->
 				  binary_to_list(Nym)++"("++
 				      integer_to_list(Count) ++ ")"
 			  end,
+		      %% cache!?
 		      {W,H} = epx_font:dimension(Font, String),
 		      epx_gc:set_fill_color({215,215,215}),
 		      Lx = X-3-10,
@@ -239,7 +239,20 @@ interp(Nym,T,Pos0,Pos1) ->
     {X0+(X1-X0)*T, Y0+(Y1-Y0)*T}.
 
 -define(ANIM_BITS, 3).
-draw_dashed_line(Px, X0, Y0, X1, Y1, Cnt, SegLen) ->
+draw_dashed_line(Px, X0, Y0, X1, Y1, Cnt, SegLen, ConState) ->
+    case ConState of
+	connect ->
+	    epx_gc:set_fill_color(black),
+	    draw_dashed_(Px, X0, Y0, X1, Y1, Cnt, SegLen, connect);
+	accept ->
+	    %% epx_gc:set_fill_color(blue),
+	    %% draw_dashed_(Px, X1, Y1, X0, Y0, Cnt, SegLen, accept);
+	    ok;
+	false ->
+	    ok
+    end.
+
+draw_dashed_(Px, X0, Y0, X1, Y1, Cnt, SegLen, ConState) ->
     Dx = (X1-X0),
     Dy = (Y1-Y0),
     A  = math:atan2(Dy,Dx),
@@ -254,7 +267,10 @@ draw_dashed_line(Px, X0, Y0, X1, Y1, Cnt, SegLen) ->
     C = MaxCnt - (Cnt band MaxCnt),
     Dl = 1/N,
     L0 = C*(Dl / (1 bsl ?ANIM_BITS)),
-    draw_segments(1, N, L0, 1/N, Px, X0, Y0, X0, Y0, Dx, Dy, Ad).
+    L1 = if ConState =:= connect -> L0;
+	    true -> L0*N
+	 end,
+    draw_segments(1, N, L1, 1/N, Px, X0, Y0, X0, Y0, Dx, Dy, Ad).
 
 draw_segments(I, N, L, Dl, Px, X0, Y0, X1, Y1, Dx, Dy,Ad) ->
     if I > N -> ok;

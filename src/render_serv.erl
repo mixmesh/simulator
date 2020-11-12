@@ -58,7 +58,7 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
                          is_zombie = IsZombie,
                          pick_mode = PickMode} = Player,
                       {NewPlayers, UpdatedPlayers} = Acc) ->
-			  Neighbours = [N || {N,St} <- Neighbours1,St=:=up],
+			  Neighbours = [N || {N,up,connect} <- Neighbours1],
                           case ets:lookup(PlayerCache, Nym) of
                               [] when IsZombie ->
                                   Acc;
