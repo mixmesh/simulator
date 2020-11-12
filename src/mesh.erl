@@ -20,7 +20,10 @@ mesh_point(I,J) ->
 
 get_location_index() ->
     %% fixme: read NPLAYER and vary the mesh size!
-    N = 8,  %% mesh is NxN
+    N = case os:getenv("NPLAYER") of
+	    false -> 8;
+	    NStr -> list_to_integer(NStr)
+	end,
     {MinX, MaxX, MinY, MaxY} = get_area(),
     Dx = (MaxX - MinX)/(N+2),
     Dy = (MaxY - MinY)/(N+2),
@@ -40,13 +43,17 @@ get_location_generator({Longitude, Latitude, Timestamp, TimeStep}) ->
     end.
 
 neighbour_distance_in_meters() ->
-    %% {MinX, MaxX, MinY, MaxY} = get_area(),
-    %% Dx = (MaxX - MinX)/10,
-    %% Dy = (MaxY - MinY)/10,
-    %% Nx = degrees_to_meters(Dx), %% 112.58
-    %% Ny = degrees_to_meters(Dy), %% 89.41
-    %% D = max(Nx, Ny)
-    114.
+    N = case os:getenv("NPLAYER") of
+	    false -> 8;
+	    NStr -> list_to_integer(NStr)
+	end,
+    {MinX, MaxX, MinY, MaxY} = get_area(),
+    Dx = (MaxX - MinX)/(N+2),
+    Dy = (MaxY - MinY)/(N+2),
+    Nx = degrees_to_meters(Dx), %% 112.58
+    Ny = degrees_to_meters(Dy), %% 89.41
+    max(Nx, Ny)+10.
+    %% 114.
 
 %% Exported: degrees_to_meters
 
