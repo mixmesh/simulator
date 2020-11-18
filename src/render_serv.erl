@@ -1,5 +1,6 @@
 -module(render_serv).
 -export([start_link/0, stop/0]).
+-export([message_handler/1]).
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
@@ -23,7 +24,7 @@ start_link() ->
           SimulatorModule:neighbour_distance_in_meters()),
     ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
     ?spawn_server_opts(fun init/1,
-                       fun message_handler/1,
+                       fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
 %% Exported: stop
