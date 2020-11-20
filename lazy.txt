@@ -1,27 +1,66 @@
-p42/p8
+SQUARE
 ======
 
-swaks --from p42@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16058 --auth LOGIN --auth-user p42 --tls-on-connect --auth-password baz --body "FOO"
+p42/p8
+======
+swaks --from p42@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16042 --auth LOGIN --auth-user p42 --tls-on-connect --auth-password baz --body "FOO"
 
-mpop --debug --host=127.0.0.1 --port=32092 --deliver=mbox,fnutt --keep=on --auth=user --user=p8 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
+mpop --debug --host=127.0.0.1 --port=32008 --deliver=mbox,fnutt --keep=on --auth=user --user=p8 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
 
 p1/p2
 =====
-swaks --from p1@obscrete.net --to p2@obscrete.net --server 127.0.0.1:16019 --auth LOGIN --auth-user p1 --tls-on-connect --auth-password baz --body "FOO"
+swaks --from p1@obscrete.net --to p2@obscrete.net --server 127.0.0.1:16001 --auth LOGIN --auth-user p1 --tls-on-connect --auth-password baz --body "FOO"
 
 
-Alice
-=====
+port mapping (player pi)
+========================
+
+smtp: 16000 + i-1
+pop:  32000 + i-1
+http: 48000 + i-1
+sync: 4000 + 2(i-1)
+
+
+MESH (player pij, side n, i,j<10)
+=========================
+
+p11/p88 (n == 8)
+================
+
+swaks --from p11@obscrete.net --to p88@obscrete.net --server 127.0.0.1:16011 --auth LOGIN --auth-user p11 --tls-on-connect --auth-password baz --body "FOO"
+
+mpop --debug --host=127.0.0.1 --port=32088 --deliver=mbox,fnutt --keep=on --auth=user --user=p88 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
+
+port mapping (player pij, side=n)
+========================
+
+smtp: 16000 + i*(n-1)+j-1
+pop:  32000 + i*(n-1)+j-1
+http: 48000 + i*(n-1)+j-1
+sync: 4000  + 2(i*(n-1)+j-1)
+
+Circle (from alice to bob)
+==========================
+
+swaks --from alice@obscrete.net --to bob@obscrete.net --server 127.0.0.1:16001 --auth LOGIN --auth-user Alice --tls-on-connect --auth-password baz --body "FOO"
+
+mpop --debug --host=127.0.0.1 --port=32002 --deliver=mbox,fnutt --keep=on --auth=user --user=Bob --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
+
+port mapping
+============
+
+Alice: 1
+Bob:   2
+Carol: 3
+Dan:   4
+Erin:  5
+
+Port number, Port base + index
+
+
+Live
+====
 
 swaks --from alice@obscrete.net --to alice@obscrete.net --server 127.0.0.1:19900 --auth LOGIN --auth-user alice --tls-on-connect --auth-password baz --body "FOO"
 
 mpop --debug --host=127.0.0.1 --port=29900 --deliver=mbox,fnutt --keep=on --auth=user --user=alice --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
-
-
-MESH
-p11/p88
-=======
-
-swaks --from p11@obscrete.net --to p88@obscrete.net --server 127.0.0.1:16063 --auth LOGIN --auth-user p11 --tls-on-connect --auth-password baz --body "FOO"
-
-mpop --debug --host=127.0.0.1 --port=32000 --deliver=mbox,fnutt --keep=on --auth=user --user=p88 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'

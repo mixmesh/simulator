@@ -1,6 +1,6 @@
 -module(square).
 -export([get_area/0]).
--export([get_location_generator/1, get_location_index/0, get_location_index/5]).
+-export([get_location_generator/1, get_location_index/0]).
 -export([neighbour_distance_in_meters/0]).
 -export([degrees_to_meters/1, meters_to_degrees/1]).
 -export([width_height_in_meters/0]).
@@ -59,6 +59,7 @@ get_location_generator(
     end.
 
 %% Exported: get_location_index
+%% return players sorted by name {p1,1,_}...{pn,n,_}
 
 get_location_index() ->
     N = case os:getenv("NPLAYER") of
@@ -67,9 +68,9 @@ get_location_index() ->
 	end,
     Pi2 = math:pi() * 2,
     %%get_location_index(100, Pi2 / 512, true, 1, true) %% ~10km/h
-    get_location_index(N, Pi2 / 128, true, 1, true). %% ~50km/h
+    get_location_index(1, N, Pi2 / 128, true, 1, true). %% ~50km/h
 
-get_location_index(Players,
+get_location_index(I, N,
                    DeltaAngle, RandomizeDeltaAngle,
                    DeltaTimestamp, RandomizeDeltaTimestamp) ->
     Pi2 = math:pi() * 2,
@@ -77,27 +78,26 @@ get_location_index(Players,
     {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude} = Area,
     Width = abs(MaxLongitude - MinLongitude),
     Height = abs(MaxLatitude - MinLatitude),
-    get_location_index(Players,
+    get_location_index(I, N,
                        DeltaAngle, RandomizeDeltaAngle,
                        DeltaTimestamp, RandomizeDeltaTimestamp,
                        Pi2, Area, Width, Height).
 
-get_location_index(
-  0,
-  _DeltaAngle, _RandomizeDeltaAngle,
-  _DeltaTimestamp, _RandomizeDeltaTimestamp,
-  _Pi2,
-  _Area,
-  _Width, _Height) ->
+get_location_index(I, N,
+		   _DeltaAngle, _RandomizeDeltaAngle,
+		   _DeltaTimestamp, _RandomizeDeltaTimestamp,
+		   _Pi2,
+		   _Area,
+		   _Width, _Height) when I > N ->
     [];
-get_location_index(
-  Players,
-  DeltaAngle, RandomizeDeltaAngle,
-  DeltaTimestamp, RandomizeDeltaTimestamp,
-  Pi2,
-  {MinLongitude, _MaxLongitude, MinLatitude, _MaxLatitude} = Area,
-  Width, Height) ->
-    Label = ?l2b([<<"p">>, ?i2b(Players)]),
+get_location_index(I, N,
+		   DeltaAngle, RandomizeDeltaAngle,
+		   DeltaTimestamp, RandomizeDeltaTimestamp,
+		   Pi2,
+		   {MinLongitude, _MaxLongitude, MinLatitude, _MaxLatitude} =
+		       Area,
+		   Width, Height) ->
+    Label = ?l2b([<<"p">>, ?i2b(I)]),
     PaddedWidth = Width * ?PADDING,
     PaddedHeight = Height * ?PADDING,
     X = rand:uniform() * PaddedWidth,
@@ -113,11 +113,11 @@ get_location_index(
             false ->
                 {-1 * StartAngle, -1 * DeltaAngle}
         end,
-    [{Label,
+    [{Label,I,
       {UpdatedStartAngle, UpdatedDeltaAngle, RandomizeDeltaAngle, 0,
        DeltaTimestamp, RandomizeDeltaTimestamp, Pi2, Radius,
-       {Longitude, Latitude}}}|
-     get_location_index(Players - 1,
+       {Longitude, Latitude}}} |
+     get_location_index(I+1,N,
                         UpdatedDeltaAngle, RandomizeDeltaAngle,
                         DeltaTimestamp, RandomizeDeltaTimestamp,
                         Pi2,

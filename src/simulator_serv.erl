@@ -17,16 +17,16 @@
 -define(SIMULATION_TIME, (1000 * 60 * 60 * 10)).
 
 -define(SYNC_IP_ADDRESS, {127, 0, 0, 1}).
--define(SYNC_PORT, 4000).
+-define(SYNC_BASE, 4000).
 
 -define(SMTP_IP_ADDRESS, {127, 0, 0, 1}).
--define(SMTP_PORT, 16000).
+-define(SMTP_BASE, 16000).
 
 -define(POP3_IP_ADDRESS, {127, 0, 0, 1}).
--define(POP3_PORT, 32000).
+-define(POP3_BASE, 32000).
 
 -define(HTTP_IP_ADDRESS, {127, 0, 0, 1}).
--define(HTTP_PORT, 48000).
+-define(HTTP_BASE, 48000).
 
 -define(PKI_IP_ADDRESS, {127, 0, 0, 1}).
 -define(PKI_PORT, 11112).
@@ -102,12 +102,14 @@ target_received_message(TargetNym, SourceNym) ->
 %%
 
 init(Parent) ->
+    rand:seed(exsss),
+
     %% message_md5 keep track on messages on simulated nodes (like a global server..)
     ets:new(player_message, [public, named_table]),
     io:format("player_message table created ~p\n", [ets:info(player_message)]),
 
+    player_info:new(),
 
-    rand:seed(exsss),
     SimulatorModule = config:lookup([simulator, 'data-set']),
     MetersToDegrees = fun SimulatorModule:meters_to_degrees/1,
     true = player_db:new(),
@@ -116,12 +118,10 @@ init(Parent) ->
     %% ets:new(endpoint_reg,[public, named_table, {write_concurrency, true}]),
 
     %% Start simulated players -
-    %% reverse to get player index match port number (and sync order)
-    %% LocationIndex = lists:reverse(SimulatorModule:get_location_index()),
     LocationIndex = SimulatorModule:get_location_index(),
-    {_, _, _, _, AllPlayers} =
+    AllPlayers =
         lists:foldl(
-          fun({Nym, Opaque}, {SyncPort, SmtpPort, Pop3Port, HttpPort, Players}) ->
+          fun({Nym,I,Opaque},Players) ->
                   PlayersDir = <<"/tmp/obscrete/players">>,
                   Keys = elgamal:generate_key_pair(
                            Nym, binary:decode_unsigned(Nym)),
@@ -139,6 +139,11 @@ init(Parent) ->
                   HttpPassword = <<"hello">>,
                   %%PkiMode = {global, <<"baz">>, {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
                   PkiMode = local,
+		  SmtpPort = ?SMTP_BASE+I,
+		  Pop3Port = ?POP3_BASE+I,
+		  SyncPort = ?SYNC_BASE+2*I,
+		  HttpPort = ?HTTP_BASE+I,
+
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
@@ -161,14 +166,21 @@ init(Parent) ->
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =
                       get_child_pid(PlayerSupPid, nodis_serv),
-                  {SyncPort + 2, SmtpPort + 1, Pop3Port + 1, HttpPort +1,
-                   [#player{nym = Nym,
-                            player_serv_pid = PlayerServPid,
-                            nodis_serv_pid = NodisServPid,
-                            sync_address = {?SYNC_IP_ADDRESS, SyncPort},
-                            smtp_address = {?SMTP_IP_ADDRESS, SmtpPort}}|
-                    Players]}
-          end, {?SYNC_PORT, ?SMTP_PORT, ?POP3_PORT, ?HTTP_PORT, []}, LocationIndex),
+
+		  player_info:set(Nym, smtp_port, SmtpPort),
+		  player_info:set(Nym, pop3_port, Pop3Port),
+		  player_info:set(Nym, sync_port, SyncPort),
+		  player_info:set(Nym, http_port, HttpPort),
+		  player_info:set(Nym, player_serv, PlayerServPid),
+		  player_info:set(Nym, nodis_serv, NodisServPid),
+
+		  [#player{nym = Nym,
+			   player_serv_pid = PlayerServPid,
+			   nodis_serv_pid = NodisServPid,
+			   sync_address = {?SYNC_IP_ADDRESS, SyncPort},
+			   smtp_address = {?SMTP_IP_ADDRESS, SmtpPort}} |
+		   Players]
+          end, [], LocationIndex),
     ok = pick_random_source(AllPlayers),
     %% Order players to start location updating
     lists:foreach(fun(#player{player_serv_pid = PlayerServPid}) ->

@@ -36,7 +36,7 @@ get_location_index("mesh") ->
 
 create_players(_SourceCertFilename, _PlayersDir, []) ->
     ok;
-create_players(SourceCertFilename, PlayersDir, [{Nym, _}|Rest]) ->
+create_players(SourceCertFilename, PlayersDir, [{Nym,_,_}|Rest]) ->
     mkconfig:create_player(
       stdout, PlayersDir, SourceCertFilename, ?b2l(Nym)),
     create_players(SourceCertFilename, PlayersDir, Rest).

@@ -137,14 +137,30 @@ message_handler(S=#state{parent = Parent }) ->
 		      Xi = Kx*X0 - Cx,
 		      Yi = Ky*Y0 - Cy,
 		      lists:foreach(
-			fun({N,up,ConState}) ->
-				epx_gc:set_foreground_color(black),
+			fun({N,up,false}) ->
+				epx_gc:set_foreground_color(white),
 				{X1,Y1} = interp(N,T,Pos0,Pos1),
 				Xj = Kx*X1 - Cx,
 				Yj = Ky*Y1 - Cy,
-				Cnt = count(Nym, N),
-				draw_dashed_line(Px, Xi, Yi, Xj, Yj, 
-						 Cnt, 5, ConState);
+				epx:draw_line(Px, Xi, Yi, Xj, Yj);
+			   ({N,up,connect}) ->
+				epx_gc:set_fill_color(blue),
+				{X1,Y1} = interp(N,T,Pos0,Pos1),
+				Xj = Kx*X1 - Cx,
+				Yj = Ky*Y1 - Cy,
+				Cnt = count(Nym,N),
+				SegLen = 5,
+				draw_dashed(Px, Xi, Yi, Xj, Yj, Cnt, 
+					    SegLen, 0.0);
+			   ({N,up,accept}) ->
+				epx_gc:set_fill_color(red),
+				{X1,Y1} = interp(N,T,Pos0,Pos1),
+				Xj = Kx*X1 - Cx,
+				Yj = Ky*Y1 - Cy,
+				Cnt = count(Nym,N),
+				SegLen = 5,
+				draw_dashed(Px, Xj, Yj, Xi, Yi, Cnt, 
+					    SegLen, 0.5);
 			   ({N,pending,_}) ->
 				epx_gc:set_foreground_color(lightgray),
 				{X1,Y1} = interp(N,T,Pos0,Pos1),
@@ -239,38 +255,29 @@ interp(Nym,T,Pos0,Pos1) ->
     {X0+(X1-X0)*T, Y0+(Y1-Y0)*T}.
 
 -define(ANIM_BITS, 3).
-draw_dashed_line(Px, X0, Y0, X1, Y1, Cnt, SegLen, ConState) ->
-    case ConState of
-	connect ->
-	    epx_gc:set_fill_color(black),
-	    draw_dashed_(Px, X0, Y0, X1, Y1, Cnt, SegLen, connect);
-	accept ->
-	    %% epx_gc:set_fill_color(blue),
-	    %% draw_dashed_(Px, X1, Y1, X0, Y0, Cnt, SegLen, accept);
-	    ok;
-	false ->
-	    ok
-    end.
+-define(MAX_CNT, ((1 bsl ?ANIM_BITS)-1)).
+-define(ANIM(Cnt), ((Cnt) band ?MAX_CNT)).
+%% -define(RANIM(Cnt), (?MAX_CNT - ((Cnt) band ?MAX_CNT))).
 
-draw_dashed_(Px, X0, Y0, X1, Y1, Cnt, SegLen, ConState) ->
+draw_dashed(Px, X0, Y0, X1, Y1, Cnt, SegLen, Li) ->
     Dx = (X1-X0),
     Dy = (Y1-Y0),
-    A  = math:atan2(Dy,Dx),
-    A1 = A-(math:pi()/2),
-    A2 = A+(math:pi()/2),
-    Ad1 = {3*math:cos(A1), 3*math:sin(A1)},
-    Ad2 = {3*math:cos(A2), 3*math:sin(A2)},
+    A = math:atan2(-Dy,Dx),
+    A1 = A+(1/2)*math:pi(),
+    A2 = A-(1/2)*math:pi(),
+    Ad1 = {3*math:cos(A1), -3*math:sin(A1)},
+    Ad2 = {3*math:cos(A2), -3*math:sin(A2)},
     Ad = {Ad1,Ad2},
     Len = math:sqrt(Dx*Dx + Dy*Dy),
     N = max(1, round(Len / SegLen)),
-    MaxCnt = ((1 bsl ?ANIM_BITS)-1),
-    C = MaxCnt - (Cnt band MaxCnt),
-    Dl = 1/N,
-    L0 = C*(Dl / (1 bsl ?ANIM_BITS)),
-    L1 = if ConState =:= connect -> L0;
-	    true -> L0*N
-	 end,
-    draw_segments(1, N, L1, 1/N, Px, X0, Y0, X0, Y0, Dx, Dy, Ad).
+    %% MaxCnt = ((1 bsl ?ANIM_BITS)-1),
+    %% C = MaxCnt - (Cnt band MaxCnt),
+    C = ?ANIM(Cnt),
+    Dl = 1/N,  %% step
+    L0 = Li*(N*Dl) + C*(Dl/?MAX_CNT),
+    X = X0 + Dx*L0,
+    Y = Y0 + Dy*L0,
+    draw_segments(1, N div 2, L0, Dl, Px, X0, Y0, X, Y, Dx, Dy, Ad).
 
 draw_segments(I, N, L, Dl, Px, X0, Y0, X1, Y1, Dx, Dy,Ad) ->
     if I > N -> ok;
@@ -286,9 +293,9 @@ draw_segments(I, N, L, Dl, Px, X0, Y0, X1, Y1, Dx, Dy,Ad) ->
     end.
 
 draw_arrow(Px, X1, Y1, X2, Y2, {{Ad1x,Ad1y},{Ad2x,Ad2y}}) ->
-    P0 = {X1,Y1},
-    P1 = {X2-Ad1x, Y2-Ad1y},
-    P2 = {X2-Ad2x, Y2-Ad2y},
+    P0 = {X2,Y2},
+    P1 = {X1-Ad1x, Y1-Ad1y},
+    P2 = {X1-Ad2x, Y1-Ad2y},
     epx:draw_triangle(Px, P0, P1, P2).
     
 

@@ -180,12 +180,15 @@ get_location_generator(ParseLine, File, FirstTimestamp) ->
     end.
 
 %% Exported: get_location_index
+get_location_index(Nyms, GenerateFilename) ->
+    get_location_index(Nyms, 1, GenerateFilename).
+    
 
-get_location_index([], _GenerateFilename) ->
+get_location_index([], _I,  _GenerateFilename) ->
     [];
-get_location_index([Nym|Rest], GenerateFilename) ->
-    [{Nym, GenerateFilename(Nym)}|
-     get_location_index(Rest, GenerateFilename)].
+get_location_index([Nym|Rest], I, GenerateFilename) ->
+    [{Nym,I,GenerateFilename(Nym)}|
+     get_location_index(Rest,I+1,GenerateFilename)].
 
 %% Exported: degrees_to_meters
 

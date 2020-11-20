@@ -24,12 +24,14 @@ get_location_index() ->
 	    false -> 8;
 	    NStr -> list_to_integer(NStr)
 	end,
+    true = (N =< 9),
     {MinX, MaxX, MinY, MaxY} = get_area(),
     Dx = (MaxX - MinX)/(N+2),
     Dy = (MaxY - MinY)/(N+2),
     OffsX = 0, %% Dx/15,
     OffsY = 0, %% Dy/15,
-    [ {mesh_point(I,J), {MinX+I*Dx+OffsX, MinY+J*Dy+OffsY, 0, 2}} || 
+    [ {mesh_point(I,J), (I-1)*N+J,
+       {MinX+I*Dx+OffsX, MinY+J*Dy+OffsY, 0, 1}} || 
 	I <- lists:seq(N, 1, -1), J <- lists:seq(N, 1, -1) ].
 
 %% Exported: get_location_generator
