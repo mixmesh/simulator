@@ -15,6 +15,9 @@ start([SourceCertFilename, DataSet]) ->
         PlayersDir = filename:join([ObscreteDir, <<"players">>]),
         ok = create_players(SourceCertFilename, PlayersDir,
                             get_location_index(DataSet)),
+        PinFilename = filename:join([ObscreteDir, <<"pin">>]),
+        io:format("Creates dummy ~s\n", [PinFilename]),
+        ok = file:write_file(PinFilename, <<"123456">>),
         erlang:halt(0)
     catch
         throw:{status, Status} ->
