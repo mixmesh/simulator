@@ -1,5 +1,6 @@
 -module(render_epx).
 -export([start_link/0, stop/0]).
+-export([message_handler/1]).
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
@@ -41,7 +42,7 @@
 start_link() ->
     application:ensure_all_started(epx),
     ?spawn_server_opts(fun init/1,
-                       fun message_handler/1,
+                       fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
 %% Exported: stop
