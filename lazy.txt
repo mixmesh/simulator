@@ -27,9 +27,9 @@ MESH (player pij, side n, i,j<10)
 p11/p88 (n == 8)
 ================
 
-swaks --from p11@obscrete.net --to p88@obscrete.net --server 127.0.0.1:16011 --auth LOGIN --auth-user p11 --tls-on-connect --auth-password baz --body "FOO"
+swaks --from p11@obscrete.net --to p88@obscrete.net --server 127.0.0.1:16001 --auth LOGIN --auth-user p11 --tls-on-connect --auth-password baz --body "FOO"
 
-mpop --debug --host=127.0.0.1 --port=32088 --deliver=mbox,fnutt --keep=on --auth=user --user=p88 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
+mpop --debug --host=127.0.0.1 --port=32064 --deliver=mbox,fnutt --keep=on --auth=user --user=p88 --tls=on --tls-starttls=off --tls-certcheck=off --passwordeval='echo "baz"'
 
 port mapping (player pij, side=n)
 ========================
