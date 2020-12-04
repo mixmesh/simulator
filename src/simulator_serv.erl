@@ -152,6 +152,7 @@ init(Parent) ->
                             players_dir = PlayersDir,
                             nym = Nym,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
+                            routing_type = location,
                             keys = Keys,
                             f = ?F,
                             get_location_generator = GetLocationGenerator,
