@@ -1,6 +1,6 @@
 -module(habitat).
 -export([demo/0]).
--export([thabitat/0, tellipse/0]). % tests
+-export([thabitat/0, tellipse/0, tellipse2/0]). % tests
 
 -define(PI, 3.141592).
 -define(RADIANS_PER_DEGREE, (?PI / 180)).
@@ -295,5 +295,22 @@ tellipse() ->
                0, 0, Width, Height, [button_press, button_release]),
     epx:window_attach(Window),
     draw_ellipse(Canvas, 100, 200, 200, 300, 200),
+    update_window(Width, Height, Window, Pixmap, Canvas),
+    is_window_closed(Window, infinity).
+
+tellipse2() ->
+    epx:start(),
+    Width = 2048,
+    Height = 2048,
+    Pixmap = epx:pixmap_create(Width, Height, argb),
+    epx:pixmap_attach(Pixmap),
+    Canvas = epx:pixmap_create(Width, Height, argb),
+    epx:pixmap_fill(Canvas, {255, 255, 255, 255}),
+    Window = epx:window_create(
+               0, 0, Width, Height, [button_press, button_release]),
+    epx:window_attach(Window),
+    %%ellipse:ellipse_ab(320, 240, 100, 150, 30),
+    %%draw_ellipse(Canvas, 100, 200, 200, 300, 200),
+    ellipse:ellipse_r(100, 200, 200, 300, 200),
     update_window(Width, Height, Window, Pixmap, Canvas),
     is_window_closed(Window, infinity).
