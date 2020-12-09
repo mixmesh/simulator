@@ -144,7 +144,6 @@ init(Parent) ->
 		  Pop3Port = ?POP3_BASE+I,
 		  SyncPort = ?SYNC_BASE+2*I,
 		  HttpPort = ?HTTP_BASE+I,
-
                   {ok, PlayerSupPid} =
                       supervisor:start_child(
                         simulator_players_sup,
@@ -161,21 +160,19 @@ init(Parent) ->
                             smtp_password_digest = SmtpPasswordDigest,
                             pop3_address = {?POP3_IP_ADDRESS, Pop3Port},
                             pop3_password_digest = Pop3PasswordDigest,
-                            http_address = {?HTTP_IP_ADDRESS, HttpPort},
+                            http_address = [{?HTTP_IP_ADDRESS, HttpPort}],
                             http_password = HttpPassword,
                             pki_mode = PkiMode}]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =
                       get_child_pid(PlayerSupPid, nodis_serv),
-
 		  player_info:set(Nym, smtp_port, SmtpPort),
 		  player_info:set(Nym, pop3_port, Pop3Port),
 		  player_info:set(Nym, sync_port, SyncPort),
 		  player_info:set(Nym, http_port, HttpPort),
 		  player_info:set(Nym, player_serv, PlayerServPid),
 		  player_info:set(Nym, nodis_serv, NodisServPid),
-
 		  [#player{nym = Nym,
 			   player_serv_pid = PlayerServPid,
 			   nodis_serv_pid = NodisServPid,
