@@ -150,11 +150,11 @@ init(Parent) ->
                         [#simulated_player_serv_config{
                             players_dir = PlayersDir,
                             nym = Nym,
-                            sync_address = {?SYNC_IP_ADDRESS, SyncPort},
                             routing_type = location,
                             use_gps = true,
                             longitude = 0.0,
                             latitude = 0.0,
+                            sync_address = {?SYNC_IP_ADDRESS, SyncPort},
                             keys = Keys,
                             f = ?F,
                             get_location_generator = GetLocationGenerator,
