@@ -209,7 +209,6 @@ static ERL_NIF_TERM _update_players(ErlNifEnv* env, int argc,
                         ERL_NIF_LATIN1) < 0)
 	goto badarg;
 
-
     // Lookup player (must exist!)
     uplayer_t *named_up;
     assert(hlookup(name, &named_up));
@@ -263,7 +262,6 @@ static ERL_NIF_TERM _update_players(ErlNifEnv* env, int argc,
           named_up->y1 = y;
           named_up->ticks1 = ticks;
           named_up->is_set1 = true;
-          //named_up->reset_render_interpolation = true;
         } else {
           named_up->x0 = named_up->x1;
           named_up->y0 = named_up->y1;

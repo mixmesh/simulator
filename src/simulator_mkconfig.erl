@@ -26,16 +26,10 @@ start([SourceCertFilename, DataSet]) ->
 
 get_location_index("square") ->
     square:get_location_index();
-get_location_index("circle") ->
-    dummy_circle:get_location_index();
-get_location_index("epfl") ->
-    epfl_mobility:get_location_index();
-get_location_index("roma") ->
-    roma_taxi:get_location_index();
-get_location_index("it") ->
-    it_vr2marketbaiaotrial:get_location_index();
 get_location_index("mesh") ->
-    mesh:get_location_index().
+    mesh:get_location_index();
+get_location_index("random_walk") ->
+    random_walk:get_location_index().
 
 create_players(_SourceCertFilename, _PlayersDir, []) ->
     ok;

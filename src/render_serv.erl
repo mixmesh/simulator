@@ -8,7 +8,8 @@
 
 -record(state,
         {parent :: pid(),
-         player_cache :: ets:tid()}).
+         player_cache :: ets:tid(),
+         simulator_module :: atom()}).
 
 -define(UPDATE_TIME, 500).
 
@@ -18,12 +19,9 @@ start_link() ->
     SimulatorModule = config:lookup([simulator, 'data-set']),
     Area = SimulatorModule:get_area(),
     {MinX, MaxX, MinY, MaxY} = Area,
-    MetersToDegrees = fun SimulatorModule:meters_to_degrees/1,
-    NeighbourDistance =
-        MetersToDegrees(
-          SimulatorModule:neighbour_distance_in_meters()),
+    NeighbourDistance = SimulatorModule:neighbour_distance(),
     ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
-    ?spawn_server_opts(fun init/1,
+    ?spawn_server_opts(fun(Parent) -> init(Parent, SimulatorModule) end,
                        fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
@@ -36,13 +34,17 @@ stop() ->
 %% Server
 %%
 
-init(Parent) ->
+init(Parent, SimulatorModule) ->
     PlayerCache = ets:new(player_cache, [{keypos, #db_player.nym}]),
     self() ! update,
     ?daemon_log_tag_fmt(system, "Render server has been started", []),
-    {ok, #state{parent = Parent, player_cache = PlayerCache}}.
+    {ok, #state{parent = Parent,
+                player_cache = PlayerCache,
+                simulator_module = SimulatorModule}}.
 
-message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
+message_handler(#state{parent = Parent,
+                       player_cache = PlayerCache,
+                       simulator_module = SimulatorModule}) ->
     receive
         {call, From, stop} ->
             {stop, From, ok};
@@ -59,7 +61,7 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
                          is_zombie = IsZombie,
                          pick_mode = PickMode} = Player,
                       {NewPlayers, UpdatedPlayers} = Acc) ->
-			  Neighbours = [N || {N,up,connect} <- Neighbours1],
+			  Neighbours = [N || {N, up, connect} <- Neighbours1],
                           case ets:lookup(PlayerCache, Nym) of
                               [] when IsZombie ->
                                   Acc;
@@ -70,11 +72,20 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
                                   Acc;
                               [CachedPlayer] ->
                                   UpdatedValues =
-				      [{x,X},{y,Y}] ++
-                                      %% is_any_updated(
-                                      %%   [x, y], [X, Y],
-                                      %%   [CachedPlayer#db_player.x,
-                                      %%   CachedPlayer#db_player.y]) ++
+                                      case SimulatorModule of
+                                          mesh ->
+                                              %% The mesh simulator module only have
+                                              %% non-moving players. This is not
+                                              %% supported by the SDL backend. This is
+                                              %% workaround. Does not work for any other
+                                              %% simulator module.
+                                              [{x, X}, {y, Y}];
+                                          _ ->
+                                              is_any_updated(
+                                                [x, y], [X, Y],
+                                                [CachedPlayer#db_player.x,
+                                                 CachedPlayer#db_player.y])
+                                      end ++
                                       is_updated(
                                         buffer_size, BufferSize,
                                         CachedPlayer#db_player.buffer_size) ++
@@ -122,6 +133,11 @@ message_handler(#state{parent = Parent, player_cache = PlayerCache}) ->
             noreply
     end.
 
+is_updated(_Tag, cached_value, _CachedValue) ->
+    [];
+is_updated(Tag, Value, _CachedValue) ->
+    [{Tag, Value}].
+
 is_any_updated(Tags, Values, CachedValues) ->
     is_any_updated(Tags, Values, CachedValues, []).
 
@@ -146,8 +162,3 @@ is_any_updated([Tag|RemainingTags],
                UpdatedValues) ->
     is_any_updated(RemainingTags, RemainingValues, RemainingCachedValues,
                    [{updated, Tag, Value}|UpdatedValues]).
-
-is_updated(_Tag, cached_value, _CachedValue) ->
-    [];
-is_updated(Tag, Value, _CachedValue) ->
-    [{Tag, Value}].

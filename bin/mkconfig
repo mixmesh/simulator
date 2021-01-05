@@ -7,7 +7,7 @@ if [ -z "${erl}" ]; then
 fi
 
 usage () {
-    >&2 echo "mkconfig <CERTIFICATE-FILE> square | circle | epfl | roma | it | mesh"
+    >&2 echo "mkconfig <CERTIFICATE-FILE> square | mesh | random_walk"
     exit 100
 }
 
@@ -16,7 +16,7 @@ if [ $# -ne 2 ]; then
 fi
 
 case $2 in
-    square | circle | epfl | roma | it | mesh)
+    square | mesh | random_walk)
         ;;
     *)
         usage

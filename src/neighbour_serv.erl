@@ -35,9 +35,7 @@ init(Parent) ->
                                 {Player, []}
                         end, simulator_serv:get_players()),
     SimulatorModule = config:lookup([simulator, 'data-set']),
-    NeighbourDistance =
-        simulator_serv:meters_to_degrees(
-          SimulatorModule:neighbour_distance_in_meters()),
+    NeighbourDistance = SimulatorModule:neighbour_distance(),
     self() ! update,
     ?daemon_log_tag_fmt(system, "Neighbour server has been started", []),
     {ok, #state{parent = Parent,

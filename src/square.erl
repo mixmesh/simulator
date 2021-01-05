@@ -1,111 +1,59 @@
 -module(square).
--export([get_area/0]).
--export([get_location_generator/1, get_location_index/0]).
--export([neighbour_distance_in_meters/0]).
--export([degrees_to_meters/1, meters_to_degrees/1]).
--export([width_height_in_meters/0]).
+-export([get_area/0, get_location_index/0, get_location_generator/1,
+         neighbour_distance/0]).
+-export([send_simulated_messages/1]).
+-export([send_messages/1]).
 
 -include_lib("apptools/include/shorthand.hrl").
+-include_lib("apptools/include/log.hrl").
+-include_lib("player/include/player_serv.hrl").
+-include("simulator_location.hrl").
 
-%% http://jsfiddle.net/geary/6cCvG/2/
-
-%% A ten kilometer square in Silicon Valley
--define(NE10KM, {37.41504612935415, -121.96489836466651}).
--define(SW10KM, {37.32526847158805, -122.07799999999997}).
-
-%% A one kilometer square in Silicon Valley
--define(NE1KM, {37.41509946129324, -122.06668983109768}).
--define(SW1KM, {37.406116847158806, -122.07799999999997}).
-
+-define(LOCATION, stolofsgatan).
 -define(PADDING, 0.5).
 
-%% Exported: get_area
+%% Exported get_area
 
 get_area() ->
-    {MaxLatitude, MaxLongitude} = ?NE1KM,
-    {MinLatitude, MinLongitude} = ?SW1KM,
-    {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude}.
-
-%% Exported: get_location_generator
-
-get_location_generator(
-  {Angle, DeltaAngle, RandomizeDeltaAngle, Timestamp, DeltaTimestamp,
-   RandomizeDeltaTimestamp, Pi2, Radius, {X, Y} = Origo}) ->
-    fun() ->
-            UpdatedTimestamp =
-                if RandomizeDeltaTimestamp ->
-                        Timestamp + DeltaTimestamp * (rand:uniform() / 2 + 0.5);
-                   true ->
-                        Timestamp + DeltaTimestamp
-                end,
-            UpdatedAngle =
-                if RandomizeDeltaAngle ->
-                        Angle + DeltaAngle * (rand:uniform() / 2 + 0.5);
-                   true ->
-                        Angle + DeltaAngle
-                end,
-            CappedAngle =
-                if abs(UpdatedAngle) > Pi2 ->
-                        0;
-                   true ->
-                        UpdatedAngle
-                end,
-            Longitude = math:cos(CappedAngle) * Radius + X,
-            Latitude = math:sin(CappedAngle) * Radius + Y,
-            {{UpdatedTimestamp, Longitude, Latitude},
-             get_location_generator(
-               {CappedAngle, DeltaAngle, RandomizeDeltaAngle, UpdatedTimestamp,
-                DeltaTimestamp, RandomizeDeltaTimestamp, Pi2, Radius, Origo})}
-    end.
+    #simulator_location{area = Area} = simulator_location:get(?LOCATION),
+    Area.
 
 %% Exported: get_location_index
-%% return players sorted by name {p1,1,_}...{pn,n,_}
 
 get_location_index() ->
-    N = case os:getenv("NPLAYER") of
-	    false -> 100;
-	    NStr -> list_to_integer(NStr)
-	end,
-    Pi2 = math:pi() * 2,
-    %%get_location_index(100, Pi2 / 512, true, 1, true) %% ~10km/h
-    get_location_index(1, N, Pi2 / 128, true, 1, true). %% ~50km/h
+    To =
+        case os:getenv("NPLAYER") of
+            false ->
+                100;
+            ToString ->
+                ?l2i(ToString)
+        end,
+    Location = simulator_location:get(?LOCATION),
+    get_location_index(1, To, Location, math:pi() * 2 / 128).
 
-get_location_index(I, N,
-                   DeltaAngle, RandomizeDeltaAngle,
-                   DeltaTimestamp, RandomizeDeltaTimestamp) ->
-    Pi2 = math:pi() * 2,
-    Area = get_area(),
-    {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude} = Area,
-    Width = abs(MaxLongitude - MinLongitude),
-    Height = abs(MaxLatitude - MinLatitude),
-    get_location_index(I, N,
-                       DeltaAngle, RandomizeDeltaAngle,
-                       DeltaTimestamp, RandomizeDeltaTimestamp,
-                       Pi2, Area, Width, Height).
-
-get_location_index(I, N,
-		   _DeltaAngle, _RandomizeDeltaAngle,
-		   _DeltaTimestamp, _RandomizeDeltaTimestamp,
-		   _Pi2,
-		   _Area,
-		   _Width, _Height) when I > N ->
+get_location_index(From, To, _Location, _DeltaAngle) when From > To ->
     [];
-get_location_index(I, N,
-		   DeltaAngle, RandomizeDeltaAngle,
-		   DeltaTimestamp, RandomizeDeltaTimestamp,
-		   Pi2,
-		   {MinLongitude, _MaxLongitude, MinLatitude, _MaxLatitude} =
-		       Area,
-		   Width, Height) ->
-    Label = ?l2b([<<"p">>, ?i2b(I)]),
-    PaddedWidth = Width * ?PADDING,
-    PaddedHeight = Height * ?PADDING,
-    X = rand:uniform() * PaddedWidth,
-    Y = rand:uniform() * PaddedHeight,
-    Longitude = MinLongitude + ((Width - PaddedWidth) / 2) + X,
-    Latitude = MinLatitude + ((Height - PaddedHeight) / 2) + Y,
-    Radius = max_radius(Area, Longitude, Latitude),
-    StartAngle = Pi2 * rand:uniform(),
+get_location_index(From, To,
+                   #simulator_location{
+                      area = {MinLongitude, _MaxLongitude,
+                              MinLatitude, _MaxLatitude} = Area,
+                      width_in_degrees = WidthInDegrees,
+                      height_in_degrees = HeightInDegrees} = Location,
+                   DeltaAngle) ->
+    Label = ?l2b([<<"p">>, ?i2b(From)]),
+    TimestampInSeconds = rand:uniform(),
+    PaddedWidthInDegrees = WidthInDegrees * ?PADDING,
+    PaddedHeightInDegrees = HeightInDegrees * ?PADDING,
+    RandomLongitude = rand:uniform() * PaddedWidthInDegrees,
+    RandomLatitude = rand:uniform() * PaddedHeightInDegrees,
+    OrigoLongitude =
+        MinLongitude + ((WidthInDegrees - PaddedWidthInDegrees) / 2) +
+        RandomLongitude,
+    OrigoLatitude =
+        MinLatitude + ((HeightInDegrees - PaddedHeightInDegrees) / 2) +
+        RandomLatitude,
+    Radius = max_radius(Area, OrigoLongitude, OrigoLatitude),
+    StartAngle = math:pi() * 2 * rand:uniform(),
     {UpdatedStartAngle, UpdatedDeltaAngle} =
         case rand:uniform(2) == 2 of
             true ->
@@ -113,16 +61,15 @@ get_location_index(I, N,
             false ->
                 {-1 * StartAngle, -1 * DeltaAngle}
         end,
-    [{Label,I,
-      {UpdatedStartAngle, UpdatedDeltaAngle, RandomizeDeltaAngle, 0,
-       DeltaTimestamp, RandomizeDeltaTimestamp, Pi2, Radius,
-       {Longitude, Latitude}}} |
-     get_location_index(I+1,N,
-                        UpdatedDeltaAngle, RandomizeDeltaAngle,
-                        DeltaTimestamp, RandomizeDeltaTimestamp,
-                        Pi2,
-                        Area,
-                        Width, Height)].
+    Longitude = math:cos(UpdatedStartAngle) * Radius + OrigoLongitude,
+    Latitude = math:sin(UpdatedStartAngle) * Radius + OrigoLatitude,
+    [{Label, From,
+      {Location,
+       0, TimestampInSeconds,
+       OrigoLongitude, OrigoLatitude,
+       UpdatedStartAngle, UpdatedDeltaAngle, Radius,
+       Longitude, Latitude, 0}}|
+     get_location_index(From + 1, To, Location, UpdatedDeltaAngle)].
 
 max_radius({MinLongitude, MaxLongitude, MinLatitude, MaxLatitude},
            Longitude, Latitude) ->
@@ -130,24 +77,58 @@ max_radius({MinLongitude, MaxLongitude, MinLatitude, MaxLatitude},
         min(Latitude - MinLatitude, MaxLatitude - Latitude)) *
         ((rand:uniform() / 2) + 0.5).
 
-%% Exported: neighbour_distance_in_meters
+%% Exported: get_location_generator
 
-neighbour_distance_in_meters() ->
-    75.
+get_location_generator(
+  {#simulator_location{meters_per_degree = MetersPerDegree,
+                       update_frequency = UpdateFrequency} = Location,
+   N, Timestamp,
+   OrigoLongitude, OrigoLatitude,
+   Angle, DeltaAngle, Radius,
+   Longitude, Latitude, TotalDistance}) ->
+    fun() ->
+            UpdatedTimestamp = Timestamp + 1 / UpdateFrequency,
+            UpdatedAngle = Angle + DeltaAngle,
+            CappedAngle =
+                case abs(UpdatedAngle) > math:pi() * 2 of
+                    true ->
+                        0;
+                    false ->
+                        UpdatedAngle
+                end,
+            NewLongitude = math:cos(CappedAngle) * Radius + OrigoLongitude,
+            NewLatitude = math:sin(CappedAngle) * Radius + OrigoLatitude,
+            UpdatedTotalDistance =
+                TotalDistance +
+                locationlib:distance(Longitude, Latitude, NewLongitude,
+                                     NewLatitude) * MetersPerDegree,
+            io:format("m/s: ~w\n", [UpdatedTotalDistance / UpdatedTimestamp]),
+            {{UpdatedTimestamp, NewLongitude, NewLatitude},
+             get_location_generator(
+               {Location,
+                N + 1, UpdatedTimestamp,
+                OrigoLongitude, OrigoLatitude,
+                CappedAngle, DeltaAngle, Radius,
+                NewLongitude, NewLatitude, UpdatedTotalDistance})}
+    end.
 
-%% Exported: degrees_to_meters
+%% Exported: neighbour_distance
 
-degrees_to_meters(Degrees) ->
-    simulator:degrees_to_meters(Degrees, get_area()).
+neighbour_distance() ->
+    Location = simulator_location:get(?LOCATION),
+    Location#simulator_location.neighbour_distance_in_degrees.
 
-%% Exported: meters_to_degrees
+%% Exported: send_simulated_messages
 
-meters_to_degrees(Meters) ->
-    simulator:meters_to_degrees(Meters, get_area()).
+send_simulated_messages(Players) ->
+    timer:apply_after(15000, ?MODULE, send_messages, [Players]).
 
-%% Exported: width_height_in_meters
+%% Exported: send_messages
 
-width_height_in_meters() ->
-    {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude} = get_area(),
-    simulator:width_height_in_meters(MinLongitude, MaxLongitude,
-                                     MinLatitude, MaxLatitude).
+send_messages(Players) ->
+    lists:foreach(
+      fun(#player{nym = Nym, player_serv_pid = PlayerServPid}) ->
+              ?daemon_log_fmt("Send message to ~s", [Nym]), 
+              Payload = ?i2b(erlang:unique_integer([positive])),
+              ok = player_serv:send_message(PlayerServPid, <<"p1">>, Payload)
+      end, Players).

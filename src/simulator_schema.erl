@@ -29,26 +29,19 @@ get() ->
        {'data-set',
         #json_type{
            name = atom,
-           info = "circle, square, epfl, roma, mesh or it",
+           info = "square, mesh or random-walk",
            typical = square,
            transform =
                fun(square) -> square;
-                  (epfl) -> epfl_mobility;
-                  (circle) -> dummy_circle;
-                  (roma) -> roma_taxi;
-                  (it) -> it_vr2marketbaiaotrial;
 		  (mesh) -> mesh;
+                  ('random-walk') -> random_walk;
                   (_) ->
                        throw(
                          {failed,
-                          "Must be one of circle, square, epfl, "
-			  "roma, it or mesh"})
+                          "Must be one of square, mesh or random-walk"})
                end,
            untransform =
-               fun(epfl_mobility) -> epfl;
-                  (dummy_circle) -> circle;
-                  (roma_taxi) -> roma;
-                  (it_vr2marketbaiaotrial) -> it;
+               fun(random_walk) -> 'random-walk';
                   (Value) -> Value
                end,
            reloadable = false}}]}].
