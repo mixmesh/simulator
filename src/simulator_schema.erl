@@ -13,17 +13,19 @@ get() ->
        {'renderer',
         #json_type{
            name = atom,
-           info = "sdl or epx",
+           info = "sdl, epx or none",
            typical = sdl,
            transform =
                fun(sdl) -> render_serv;
                   (epx) -> render_epx;
+                  (none) -> none;
                   (_) ->
-                       throw({failed, "Must be one of sdl or epx"})
+                       throw({failed, "Must be one of sdl, epx or none"})
                end,
            untransform =
                fun(render_serv) -> sdl;
-                  (render_epx) -> epx
+                  (render_epx) -> epx;
+                  (none) -> none
                end,
            reloadable = false}},
        {'data-set',
@@ -44,4 +46,9 @@ get() ->
                fun(random_walk) -> 'random-walk';
                   (Value) -> Value
                end,
+           reloadable = false}},
+       {'rerandomization-time',
+        #json_type{
+           name = {integer, 0, 5000},
+           typical = 100,
            reloadable = false}}]}].

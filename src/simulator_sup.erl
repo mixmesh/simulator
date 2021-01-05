@@ -11,7 +11,6 @@ start_link() ->
 %% Exported: init
 
 init([]) ->
-    Render = config:lookup([simulator, renderer]),
     SimulatorPlayersSupSpec =
         #{id => simulator_players_sup,
           start => {simulator_players_sup, start_link, []},
@@ -23,9 +22,13 @@ init([]) ->
         #{id => neighbour_serv,
           start => {neighbour_serv, start_link, []}},
     RenderServSpec =
-        #{id => render_serv,
-          start => {Render, start_link, []}},
-    {ok, {#{strategy => one_for_one}, [SimulatorPlayersSupSpec,
-                                       SimulatorServSpec,
-                                       NeighbourServSpec,
-                                       RenderServSpec]}}.
+        case config:lookup([simulator, renderer]) of
+            none ->
+                [];
+            RenderModule ->
+                [#{id => render_serv, start => {RenderModule, start_link, []}}]
+        end,
+    {ok, {#{strategy => one_for_one},
+          [SimulatorPlayersSupSpec,
+           SimulatorServSpec,
+           NeighbourServSpec] ++ RenderServSpec}}.

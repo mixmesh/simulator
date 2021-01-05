@@ -74,10 +74,11 @@ message_handler(#state{parent = Parent,
                                   UpdatedValues =
                                       case SimulatorModule of
                                           mesh ->
-                                              %% The mesh simulator module only have
-                                              %% non-moving players. This is not
-                                              %% supported by the SDL backend. This is
-                                              %% workaround. Does not work for any other
+                                              %% The mesh simulator module only
+                                              %% have non-moving players. This
+                                              %% is not supported by the SDL
+                                              %% backend. This is workaround.
+                                              %% Does not work for any other
                                               %% simulator module.
                                               [{x, X}, {y, Y}];
                                           _ ->
