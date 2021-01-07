@@ -6,6 +6,7 @@
 -export([get_random_player/1]).
 -export([target_received_message/2]).
 -export([received_message/2]).
+-export([analyze/0]).
 -export([message_handler/1]).
 
 -include_lib("apptools/include/log.hrl").
@@ -78,6 +79,11 @@ target_received_message(TargetNym, SourceNym) ->
 
 received_message(TargetNym, SourceNym) ->
     serv:cast(?MODULE, {received_message, TargetNym, SourceNym}).
+
+%% Exported: analyze
+
+analyze() ->
+    serv:cast(?MODULE, analyze).
 
 %%
 %% Server
@@ -223,13 +229,13 @@ message_handler(#state{parent = Parent, source = Source, target = Target,
         {cast, {received_message, _TargetNym, _SourceNym}} ->
             ok = ping(),
             noreply;
+        {cast, analyze} ->
+            ok = stats_db:analyze(),
+            noreply;
         %%
         %% Below follows handling of internally generated messages
         %%
         simulation_ended ->
-            ok = stats_db:save(),
-            ok = stats_db:analyze(),
-            ?daemon_log_tag_fmt(system, "Analysis performed", []),
             noreply;
         {system, From, Request} ->
             {system, From, Request};

@@ -8,7 +8,7 @@
 %% St Olofsgatan
 %% https://maps.googleapis.com/maps/api/staticmap?center=59.865906,17.644667&zoom=16&size=500x500&scale=2&key=AIzaSyA2xg80wkvGOFsLdHZ72BhH5PmpDDA3lvQ
 get(stolofsgatan) ->
-    get(17.644667, 59.865906, 16, 500, 500, 2, 30, 1, 75).
+    get(17.644667, 59.865906, 16, 500, 500, 2, 8, 1, 75).
 
 get(Longitude, Latitude, Zoom, WidthInPixels, HeightInPixels, Scale,
     MaxSpeedInMetersPerSecond, UpdateFrequency, NeighbourDistanceInMeters) ->

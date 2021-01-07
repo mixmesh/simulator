@@ -27,12 +27,19 @@ get_location_index() ->
             ToString ->
                 ?l2i(ToString)
         end,
+    ScaleFactor =
+        case os:getenv("SCALEFACTOR") of
+            false ->
+                1;
+            ScaleFactorString ->
+                ?l2i(ScaleFactorString)
+        end,
     Location = simulator_location:get(?LOCATION),
-    get_location_index(1, To, Location).
+    get_location_index(1, To, ScaleFactor, Location).
 
-get_location_index(From, To, _Location) when From > To ->
+get_location_index(From, To, _ScaleFactor, _Location) when From > To ->
     [];
-get_location_index(From, To,
+get_location_index(From, To, ScaleFactor,
                    #simulator_location{
                       area = {MinLongitude, _MaxLongitude,
                               MinLatitude, _MaxLatitude},
@@ -47,13 +54,13 @@ get_location_index(From, To,
     LongitudeDirection = random_direction(),
     LatitudeDirection = random_direction(),
     [{Label, From,
-      {Location,
+      {ScaleFactor, Location,
        0, TimestampInSeconds,
        MinLongitude, MinLatitude,
        NextLongitudeDelta, NextLatitudeDelta,
        Longitude, Latitude,
        LongitudeDirection, LatitudeDirection, 0}}|
-     get_location_index(From + 1, To, Location)].
+     get_location_index(From + 1, To, ScaleFactor, Location)].
 
 random_direction() ->
     case rand:uniform() > 0.5 of
@@ -86,7 +93,8 @@ smoothstep(A, B, W) ->
 %% Exported: get_location_generator
 
 get_location_generator(
-  {#simulator_location{width_in_degrees = WidthInDegrees,
+  {ScaleFactor,
+   #simulator_location{width_in_degrees = WidthInDegrees,
                        height_in_degrees = HeightInDegrees,
                        meters_per_degree = MetersPerDegree,
                        update_frequency = UpdateFrequency,
@@ -98,7 +106,7 @@ get_location_generator(
    Longitude, Latitude,
    LongitudeDirection, LatitudeDirection, TotalDistance}) ->
     fun() ->
-            UpdatedTimestamp = Timestamp + 1 / UpdateFrequency,
+            UpdatedTimestamp = Timestamp + (1 / UpdateFrequency / ScaleFactor),
             {LongitudeDelta, EvenNextLongitudeDelta} = NextLongitudeDelta(),
             LongitudeMovement =
                 DegreesPerUpdate * LongitudeDelta - DegreesPerUpdate / 2,
@@ -120,7 +128,8 @@ get_location_generator(
             %%io:format("m/s: ~w\n", [UpdatedTotalDistance / UpdatedTimestamp]),
             {{UpdatedTimestamp, NewLongitude, NewLatitude},
              get_location_generator(
-               {Location,
+               {ScaleFactor,
+                Location,
                 N + 1, UpdatedTimestamp,
                 MinLongitude, MinLatitude,
                 EvenNextLongitudeDelta, EvenNextLatitudeDelta,

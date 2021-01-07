@@ -46,9 +46,4 @@ get() ->
                fun(random_walk) -> 'random-walk';
                   (Value) -> Value
                end,
-           reloadable = false}},
-       {'rerandomization-time',
-        #json_type{
-           name = {integer, 0, 5000},
-           typical = 100,
            reloadable = false}}]}].

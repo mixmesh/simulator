@@ -37,45 +37,45 @@ message_buffered(Nym) ->
 %% Exported: message_create
 
 -if(DISABLED).
-message_created(_MessageId, _SenderNym, _RecipientNym) ->
+message_created(_MessageMD5, _SenderNym, _RecipientNym) ->
     true.
 -else.
-message_created(MessageId, SenderNym, RecipientNym) ->
+message_created(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
     ?dbg_log({message_created, Timestamp, SenderNym, RecipientNym,
-              MessageId}),
+              MessageMD5}),
     ets:insert(?MODULE,
-               {{message_created, MessageId}, Timestamp, SenderNym,
+               {{message_created, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
 -endif.
 
 %% Exported: message_duplicate_received
 
 -if(DISABLED).
-message_duplicate_received(_MessageId, _SenderNym, _RecipientNym) ->
+message_duplicate_received(_MessageMD5, _SenderNym, _RecipientNym) ->
     true.
 -else.
-message_duplicate_received(MessageId, SenderNym, RecipientNym) ->
+message_duplicate_received(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
     ?dbg_log({message_duplicate_received, Timestamp, RecipientNym, SenderNym,
-              MessageId}),
+              MessageMD5}),
     ets:insert(?MODULE,
-               {{message_duplicate_received, MessageId}, Timestamp, SenderNym,
+               {{message_duplicate_received, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
 -endif.
 
 %% Exported: message_received
 
 -if(DISABLED).
-message_received(_MessageId, _SenderNym, _RecipientNym) ->
+message_received(_MessageMD5, _SenderNym, _RecipientNym) ->
     true.
 -else.
-message_received(MessageId, SenderNym, RecipientNym) ->
+message_received(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
     ?dbg_log({message_received, Timestamp, RecipientNym, SenderNym,
-              MessageId}),
+              MessageMD5}),
     ets:insert(?MODULE,
-               {{message_received, MessageId}, Timestamp, SenderNym,
+               {{message_received, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
 -endif.
 
@@ -98,7 +98,7 @@ save(Filename) ->
 %% analyze
 
 analyze() ->
-    analyze("/home/jocke/tmp/dump.dets").
+    perform_analysis(?MODULE).
 
 analyze(Filename) ->
     {ok, Nym} = dets:open_file(Filename),
@@ -115,10 +115,10 @@ delivery_rate(Tid) ->
         ets:foldl(
           fun(Entry, {CreatedMessages, DeliveredMessages, EndToEndDelays}) ->
                   case Entry of
-                      {{message_created, MessageId}, CreateTimestamp,
+                      {{message_created, MessageMD5}, CreateTimestamp,
                        SenderNym, RecipientNym} ->
                           case ets:match_object(
-                                 Tid, {{message_received, MessageId},
+                                 Tid, {{message_received, MessageMD5},
                                        '_',
                                        SenderNym,
                                        RecipientNym}) of
