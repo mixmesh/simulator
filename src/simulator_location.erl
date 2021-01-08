@@ -10,7 +10,7 @@
 get(stolofsgatan) ->
     BackgroundFilename =
         filename:join([code:priv_dir(simulator), "stolofsgatan.png"]),
-    get(17.644667, 59.865906, 16, 500, 500, 2, 8, 1, 75, BackgroundFilename).
+    get(17.644667, 59.865906, 16, 500, 500, 2, 8, 1, 50, BackgroundFilename).
 
 get(Longitude, Latitude, Zoom, WidthInPixels, HeightInPixels, Scale,
     MaxSpeedInMetersPerSecond, UpdateFrequency, NeighbourDistanceInMeters,
