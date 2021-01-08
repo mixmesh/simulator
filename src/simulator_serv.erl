@@ -32,6 +32,10 @@
 -define(PKI_IP_ADDRESS, {127, 0, 0, 1}).
 -define(PKI_PORT, 11112).
 
+-define(BUFFER_SIZE, 1000).
+-define(F, 0.2).
+-define(K, 10).
+
 -record(state,
         {parent :: pid(),
          source = none :: none | binary(),
@@ -142,8 +146,10 @@ init(Parent) ->
                             longitude = 0.0,
                             latitude = 0.0,
                             sync_address = {?SYNC_IP_ADDRESS, SyncPort},
-                            keys = Keys,
+                            buffer_size = ?BUFFER_SIZE,
                             f = ?F,
+                            k = ?K,
+                            keys = Keys,
                             get_location_generator = GetLocationGenerator,
                             smtp_address = {?SMTP_IP_ADDRESS, SmtpPort},
                             smtp_password_digest = SmtpPasswordDigest,
