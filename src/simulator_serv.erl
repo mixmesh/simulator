@@ -95,7 +95,7 @@ init(Parent) ->
 
     %% message_md5 keep track on messages on simulated nodes (like a global server..)
     ets:new(player_message, [public, named_table]),
-    io:format("player_message table created ~p\n", [ets:info(player_message)]),
+    %%io:format("player_message table created ~p\n", [ets:info(player_message)]),
 
     player_info:new(),
 
