@@ -8,10 +8,13 @@
 %% St Olofsgatan
 %% https://maps.googleapis.com/maps/api/staticmap?center=59.865906,17.644667&zoom=16&size=500x500&scale=2&key=AIzaSyA2xg80wkvGOFsLdHZ72BhH5PmpDDA3lvQ
 get(stolofsgatan) ->
-    get(17.644667, 59.865906, 16, 500, 500, 2, 8, 1, 75).
+    BackgroundFilename =
+        filename:join([code:priv_dir(simulator), "stolofsgatan.png"]),
+    get(17.644667, 59.865906, 16, 500, 500, 2, 8, 1, 75, BackgroundFilename).
 
 get(Longitude, Latitude, Zoom, WidthInPixels, HeightInPixels, Scale,
-    MaxSpeedInMetersPerSecond, UpdateFrequency, NeighbourDistanceInMeters) ->
+    MaxSpeedInMetersPerSecond, UpdateFrequency, NeighbourDistanceInMeters,
+    BackgroundFilename) ->
     GeodeticCenter = {Longitude, Latitude},
     ECEFCenter =
         locationlib:geodetic_to_ecef_coordinates(Longitude, Latitude, 0),
@@ -54,4 +57,5 @@ get(Longitude, Latitude, Zoom, WidthInPixels, HeightInPixels, Scale,
        update_frequency = UpdateFrequency,
        degrees_per_update = DegreesPerUpdate,
        neighbour_distance_in_meters = NeighbourDistanceInMeters,
-       neighbour_distance_in_degrees = NeighbourDistanceInDegrees}.
+       neighbour_distance_in_degrees = NeighbourDistanceInDegrees,
+       background_filename = BackgroundFilename}.

@@ -5,6 +5,7 @@
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("player/include/player_serv.hrl").
+-include("simulator_location.hrl").
 
 -define(DEFAULT_DATASET, square).
 
@@ -28,7 +29,8 @@
 	 %% current position
 	 pos0 :: #{ binary() => {X::float(),Y::float() }},
 	 %% target position
-	 pos1 :: #{ binary() => {X::float(),Y::float() }}
+	 pos1 :: #{ binary() => {X::float(),Y::float() }},
+         map_background
 	}).
 
 -define(DEFAULT_WIDTH,  1000).
@@ -55,18 +57,22 @@ stop() ->
 %%
 init(Parent) ->
     SimulatorModule = config:lookup([simulator, 'data-set']),
-%%    MetersToDegrees = fun ?SIMULATOR_MODULE:meters_to_degrees/1,
-%%    NeighbourDistance = MetersToDegrees(?NEIGHBOUR_DISTANCE_IN_METERS),
-    init(Parent,[{dataset, SimulatorModule}]).
+    init(Parent, [{dataset, SimulatorModule}]).
 
-init(Parent,Options) ->
-    Width  = proplists:get_value(width, Options, ?DEFAULT_WIDTH),
-    Height = proplists:get_value(height, Options, ?DEFAULT_HEIGHT),
+init(Parent, Options) ->
+    SimulatorModule = proplists:get_value(dataset, Options, ?DEFAULT_DATASET),
+    #simulator_location{
+       scale = Scale,
+       area = DefaultArea,
+       width_in_pixels = WidthInPixels,
+       height_in_pixels = HeightInPixels,
+       background_filename = BackgroundFilename} =
+        SimulatorModule:get_location(),
+    Width  = proplists:get_value(width, Options, WidthInPixels * Scale),
+    Height = proplists:get_value(height, Options, HeightInPixels * Scale),
     Color  = proplists:get_value(color, Options, ?DEFAULT_COLOR),
     Format = proplists:get_value(format, Options, ?DEFAULT_FORMAT),
-    SimulatorModule = proplists:get_value(dataset, Options, ?DEFAULT_DATASET),
     Interval = proplists:get_value(interval, Options, ?DEFAULT_INTERVAL),
-    DefaultArea = SimulatorModule:get_area(),
     Area = proplists:get_value(area, Options, DefaultArea),
     {ok,Font} = epx_font:match([{size,10}]),
     Ascent = epx:font_info(Font, ascent),
@@ -75,7 +81,15 @@ init(Parent,Options) ->
     Pixels = epx:pixmap_create(Width,Height,Format),
     epx:pixmap_attach(Pixels),
     Background = epx:pixmap_create(Width,Height,Format),
-    epx:pixmap_fill(Background, Color),
+    MapBackground =
+        case BackgroundFilename of
+            none ->
+                epx:pixmap_fill(Background, Color),
+                none;
+            _ ->
+                {ok, BackgroundImage} = epx_image:load(BackgroundFilename),
+                hd(epx_image:pixmaps(BackgroundImage))
+        end,
     Win = epx:window_create(30, 30, Width, Height,
 			    [button_press, button_release]),
     epx:window_attach(Win),
@@ -83,7 +97,6 @@ init(Parent,Options) ->
     Dt = 1/Steps,
     self() ! {update,Dt,0.0},
     ?daemon_log_tag_fmt(system, "Render epx server has been started", []),
-
     {MinX, MaxX, MinY, MaxY} = Area,
     ScaleX = Width/(MaxX - MinX),
     ScaleY = Height/(MaxY - MinY),
@@ -104,7 +117,8 @@ init(Parent,Options) ->
 		area = Area,
 		scale = {ScaleX,ScaleY},
 		pos0 = Pos,
-		pos1 = Pos
+		pos1 = Pos,
+                map_background = MapBackground
 	       }}.
 
 
@@ -127,11 +141,16 @@ message_handler(S=#state{parent = Parent }) ->
 	    Sy = Height/(MaxY-MinY),
 	    Kx = Sx, Cx = Sx*MinX,
 	    Ky = Sy, Cy = Sy*MinY,
-	    epx:pixmap_fill(Px, S#state.color),
+            case S#state.map_background of
+                none ->
+                    epx:pixmap_fill(Px, S#state.color);
+                _ ->
+                    epx:pixmap_copy_to(S#state.map_background, Px)
+            end,
 	    %% draw neighbour connections
 	    Pos0 = S#state.pos0,
 	    Pos1 = S#state.pos1,
-
+            
 	    player_db:foldl(
 	      fun(#db_player{nym=Nym,neighbours=Ns}, _Acc) ->
 		      {X0,Y0} = interp(Nym,T,Pos0,Pos1),

@@ -21,6 +21,7 @@
          update_frequency :: number(),
          degrees_per_update :: number(),
          neighbour_distance_in_degrees :: number(),
-         neighbour_distance_in_meters :: number()}).
+         neighbour_distance_in_meters :: number(),
+         background_filename = none}).
 
 -endif.

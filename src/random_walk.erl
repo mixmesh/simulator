@@ -1,6 +1,6 @@
 -module(random_walk).
--export([get_area/0, get_location_index/0, get_location_generator/1,
-         neighbour_distance/0]).
+-export([get_area/0, get_location/0, get_location_index/0,
+         get_location_generator/1, neighbour_distance/0]).
 -export([send_simulated_messages/1]).
 -export([send_messages/2]).
 
@@ -12,11 +12,16 @@
 -define(LOCATION, stolofsgatan).
 -define(RESEND_MESSAGES_TIME, 60000).
 
-%% Exported get_area
+%% Exported: get_area
 
 get_area() ->
     #simulator_location{area = Area} = simulator_location:get(?LOCATION),
     Area.
+
+%% Exported: get_location
+
+get_location() ->
+    simulator_location:get(?LOCATION).
 
 %% Exported: get_location_index
 
