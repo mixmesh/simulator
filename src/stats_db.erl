@@ -1,45 +1,34 @@
 -module(stats_db).
 -export([new/0]).
--export([message_buffered/1, message_created/3]).
--export([message_duplicate_received/3, message_received/3]).
+-export([message_buffered/1, message_created/3, message_duplicate_received/3,
+         message_received/3, messages_relayed/1]).
 -export([dump/0, save/0, save/1]).
--export([analyze/0, analyze/1]).
+-export([analyze/0, analyze/1, format_analysis/1]).
 
 -include_lib("apptools/include/log.hrl").
-
--define(DISABLED, false).
+-include_lib("apptools/include/shorthand.hrl").
+-include("stats_db.hrl").
 
 %% Exported: new
 
--if(DISABLED).
 new() ->
-  true.
--else.
-new() ->
-    ?MODULE ==
-        ets:new(?MODULE, [public, named_table, {write_concurrency, true}]).
--endif.
+    ?MODULE = ets:new(?MODULE, [public, named_table,
+                                {write_concurrency, true}]),
+    Timestamp = os:system_time(millisecond),
+    true = ets:insert(?MODULE, {messages_relayed, 0}),
+    ets:insert(?MODULE, {start_time, Timestamp}).
 
 %% Exported: message_buffered
 
--if(DISABLED).
-message_buffered(_Nym) ->
-    true.
--else.
 message_buffered(Nym) ->
     Timestamp = os:system_time(millisecond),
     ?dbg_log({message_buffered, Timestamp, Nym}),
     ets:insert(?MODULE,
                {{message_buffered, Nym, erlang:unique_integer()},
                 Timestamp}).
--endif.
 
 %% Exported: message_create
 
--if(DISABLED).
-message_created(_MessageMD5, _SenderNym, _RecipientNym) ->
-    true.
--else.
 message_created(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
     ?dbg_log({message_created, Timestamp, SenderNym, RecipientNym,
@@ -47,14 +36,9 @@ message_created(MessageMD5, SenderNym, RecipientNym) ->
     ets:insert(?MODULE,
                {{message_created, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
--endif.
 
 %% Exported: message_duplicate_received
 
--if(DISABLED).
-message_duplicate_received(_MessageMD5, _SenderNym, _RecipientNym) ->
-    true.
--else.
 message_duplicate_received(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
     ?dbg_log({message_duplicate_received, Timestamp, RecipientNym, SenderNym,
@@ -62,14 +46,9 @@ message_duplicate_received(MessageMD5, SenderNym, RecipientNym) ->
     ets:insert(?MODULE,
                {{message_duplicate_received, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
--endif.
 
 %% Exported: message_received
 
--if(DISABLED).
-message_received(_MessageMD5, _SenderNym, _RecipientNym) ->
-    true.
--else.
 message_received(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
     ?dbg_log({message_received, Timestamp, RecipientNym, SenderNym,
@@ -77,7 +56,12 @@ message_received(MessageMD5, SenderNym, RecipientNym) ->
     ets:insert(?MODULE,
                {{message_received, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
--endif.
+
+%% Exported: messages_relayed
+
+messages_relayed(N) ->
+    [{_, M}] = ets:lookup(?MODULE, messages_relayed),
+    ets:insert(?MODULE, {messages_relayed, N + M}).
 
 %% Exported: dump
 
@@ -97,23 +81,21 @@ save(Filename) ->
 
 %% analyze
 
-analyze() ->
-    perform_analysis(?MODULE).
-
 analyze(Filename) ->
     {ok, Nym} = dets:open_file(Filename),
     Tid = ets:new(ram_stats, []),
     Tid = dets:to_ets(Nym, Tid),
     perform_analysis(Tid).
 
-perform_analysis(Tid) ->
-    io:format("Delivery rate: ~p\n", [delivery_rate(Tid)]),
-    ok.
+analyze() ->
+    perform_analysis(?MODULE).
 
-delivery_rate(Tid) ->
-    {TotalCreatedMessages, TotalDeliveredMessages, TotalEndToEndDelays} =
+perform_analysis(Tid) ->
+    [{_, StartTime}] = ets:lookup(?MODULE, start_time),
+    CurrentTime = os:system_time(millisecond),
+    {CreatedMessages, DeliveredMessages, DeliveryDelays} =
         ets:foldl(
-          fun(Entry, {CreatedMessages, DeliveredMessages, EndToEndDelays}) ->
+          fun(Entry, {CreatedMessages, DeliveredMessages, DeliveryDelays}) ->
                   case Entry of
                       {{message_created, MessageMD5}, CreateTimestamp,
                        SenderNym, RecipientNym} ->
@@ -123,23 +105,78 @@ delivery_rate(Tid) ->
                                        SenderNym,
                                        RecipientNym}) of
                               [] ->
-                                  {CreatedMessages + 1,
-                                   DeliveredMessages,
-                                   EndToEndDelays};
+                                  {CreatedMessages + 1, DeliveredMessages,
+                                   DeliveryDelays};
                               [{_, ReceiveTimestamp, _, _}] ->
-                                  {CreatedMessages + 1,
-                                   DeliveredMessages + 1,
+                                  {CreatedMessages + 1, DeliveredMessages + 1,
                                    [ReceiveTimestamp - CreateTimestamp|
-                                    EndToEndDelays]}
+                                    DeliveryDelays]}
                           end;
                       _ ->
-                          {CreatedMessages, DeliveredMessages, EndToEndDelays}
+                          {CreatedMessages, DeliveredMessages, DeliveryDelays}
                   end
           end, {0, 0, []}, ?MODULE),
-    if
-        TotalDeliveredMessages == 0 ->
-            no_messages_delivered;
-        true ->
-            {TotalDeliveredMessages / TotalCreatedMessages,
-             lists:sum(TotalEndToEndDelays) / TotalDeliveredMessages}
-    end.
+    [{_, MessagesRelayed}] = ets:lookup(?MODULE, messages_relayed),
+    #stats_db_analysis{
+       start_time = StartTime,
+       current_time = CurrentTime,
+       created_messages = CreatedMessages,
+       delivered_messages = DeliveredMessages,
+       delivery_delays = DeliveryDelays,
+       relayed_messages = MessagesRelayed}.
+
+%% format_analysis
+
+format_analysis(#stats_db_analysis{
+                   start_time = StartTime,
+                   current_time = CurrentTime,
+                   created_messages = CreatedMessages,
+                   delivered_messages = DeliveredMessages,
+                   delivery_delays = DeliveryDelays,
+                   relayed_messages = RelayedMessages}) ->
+    ScaleFactor =
+        case os:getenv("SCALEFACTOR") of
+            false ->
+                1;
+            ScaleFactorString ->
+                ?l2i(ScaleFactorString)
+        end,
+    SimulatorRunTimeInMinutes =  (CurrentTime - StartTime) / 1000 / 60,
+    io:format("\nSimulator run time: ~s minutes\n",
+              [number_to_string(SimulatorRunTimeInMinutes)]),
+    ScaledSimulatorRunTimeInMinutes = SimulatorRunTimeInMinutes * ScaleFactor,
+    io:format("Scaled simulator run time: ~s minutes\n",
+              [number_to_string(ScaledSimulatorRunTimeInMinutes)]),
+    case CreatedMessages of
+        0 ->
+            ok;
+        _ ->
+            io:format("Created messages: ~w\n", [CreatedMessages]),
+            io:format("Delivered messages: ~w\n", [DeliveredMessages]),
+            io:format("Relayed messages: ~w\n", [RelayedMessages]),
+            io:format("Delivery rate: ~s\n",
+                      [number_to_string(
+                         DeliveredMessages / CreatedMessages)])
+    end,
+    case DeliveredMessages of
+        0 ->
+            ok;
+        _ ->
+            io:format("Average delivery delay: ~s minutes\n",
+                      [number_to_string(
+                         lists:sum(DeliveryDelays) * ScaleFactor /
+                             DeliveredMessages / 1000 / 60)]),
+            SortedDeliveryDelays = lists:sort(DeliveryDelays),
+            MeanDeliveryDelay =
+                lists:nth(round(length(SortedDeliveryDelays) / 2),
+                          SortedDeliveryDelays),
+            io:format("Mean delivery delay: ~s minutes\n",
+                      [number_to_string(
+                         MeanDeliveryDelay * ScaleFactor / 1000 / 60)])
+    end,
+    ok.
+
+number_to_string(Integer) when is_integer(Integer) ->
+    ?i2l(Integer);
+number_to_string(Float) when is_float(Float) ->
+    float_to_list(Float, [{decimals, 4}, compact]).

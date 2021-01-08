@@ -2,7 +2,7 @@
 -export([get_area/0, get_location_index/0, get_location_generator/1,
          neighbour_distance/0]).
 -export([send_simulated_messages/1]).
--export([send_messages/1]).
+-export([send_messages/2]).
 
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("apptools/include/log.hrl").
@@ -10,6 +10,8 @@
 -include("simulator_location.hrl").
 
 -define(LOCATION, stolofsgatan).
+-define(RESEND_MESSAGES_TIME, 60000).
+
 -define(PADDING, 0.5).
 
 %% Exported get_area
@@ -29,11 +31,20 @@ get_location_index() ->
                 ?l2i(ToString)
         end,
     Location = simulator_location:get(?LOCATION),
-    get_location_index(1, To, Location, math:pi() * 2 / 128).
+    get_location_index(1, To, scale_factor(), Location, math:pi() * 2 / 128).
 
-get_location_index(From, To, _Location, _DeltaAngle) when From > To ->
+scale_factor() ->
+    case os:getenv("SCALEFACTOR") of
+        false ->
+            1;
+        ScaleFactorString ->
+            ?l2i(ScaleFactorString)
+    end.
+
+get_location_index(From, To, _ScaleFactor, _Location, _DeltaAngle)
+  when From > To ->
     [];
-get_location_index(From, To,
+get_location_index(From, To, ScaleFactor,
                    #simulator_location{
                       area = {MinLongitude, _MaxLongitude,
                               MinLatitude, _MaxLatitude} = Area,
@@ -64,12 +75,14 @@ get_location_index(From, To,
     Longitude = math:cos(UpdatedStartAngle) * Radius + OrigoLongitude,
     Latitude = math:sin(UpdatedStartAngle) * Radius + OrigoLatitude,
     [{Label, From,
-      {Location,
+      {ScaleFactor,
+       Location,
        0, TimestampInSeconds,
        OrigoLongitude, OrigoLatitude,
        UpdatedStartAngle, UpdatedDeltaAngle, Radius,
        Longitude, Latitude, 0}}|
-     get_location_index(From + 1, To, Location, UpdatedDeltaAngle)].
+     get_location_index(From + 1, To, ScaleFactor, Location,
+                        UpdatedDeltaAngle)].
 
 max_radius({MinLongitude, MaxLongitude, MinLatitude, MaxLatitude},
            Longitude, Latitude) ->
@@ -80,14 +93,15 @@ max_radius({MinLongitude, MaxLongitude, MinLatitude, MaxLatitude},
 %% Exported: get_location_generator
 
 get_location_generator(
-  {#simulator_location{meters_per_degree = MetersPerDegree,
+  {ScaleFactor,
+   #simulator_location{meters_per_degree = MetersPerDegree,
                        update_frequency = UpdateFrequency} = Location,
    N, Timestamp,
    OrigoLongitude, OrigoLatitude,
    Angle, DeltaAngle, Radius,
    Longitude, Latitude, TotalDistance}) ->
     fun() ->
-            UpdatedTimestamp = Timestamp + 1 / UpdateFrequency,
+            UpdatedTimestamp = Timestamp + (1 / UpdateFrequency / ScaleFactor),
             UpdatedAngle = Angle + DeltaAngle,
             CappedAngle =
                 case abs(UpdatedAngle) > math:pi() * 2 of
@@ -102,10 +116,13 @@ get_location_generator(
                 TotalDistance +
                 locationlib:distance(Longitude, Latitude, NewLongitude,
                                      NewLatitude) * MetersPerDegree,
-            io:format("m/s: ~w\n", [UpdatedTotalDistance / UpdatedTimestamp]),
+%            io:format("m/s: ~w\n",
+%                      [UpdatedTotalDistance /
+%                           (UpdatedTimestamp * ScaleFactor)]),
             {{UpdatedTimestamp, NewLongitude, NewLatitude},
              get_location_generator(
-               {Location,
+               {ScaleFactor,
+                Location,
                 N + 1, UpdatedTimestamp,
                 OrigoLongitude, OrigoLatitude,
                 CappedAngle, DeltaAngle, Radius,
@@ -121,14 +138,22 @@ neighbour_distance() ->
 %% Exported: send_simulated_messages
 
 send_simulated_messages(Players) ->
-    timer:apply_after(15000, ?MODULE, send_messages, [Players]).
+    timer:apply_after(5000, ?MODULE, send_messages,
+                      [Players, scale_factor()]).
 
 %% Exported: send_messages
 
-send_messages(Players) ->
+send_messages(Players, ScaleFactor) ->
     lists:foreach(
-      fun(#player{nym = Nym, player_serv_pid = PlayerServPid}) ->
-              ?daemon_log_fmt("Send message to ~s", [Nym]), 
+      fun(#player{nym = _Nym, player_serv_pid = PlayerServPid}) ->
               Payload = ?i2b(erlang:unique_integer([positive])),
-              ok = player_serv:send_message(PlayerServPid, <<"p1">>, Payload)
-      end, Players).
+              spawn(
+                fun() ->
+                        io:format(">"),
+                        player_serv:send_message(PlayerServPid, <<"p1">>,
+                                                 Payload),
+                        io:format("<")
+                end)
+      end, Players),
+    timer:apply_after(trunc(?RESEND_MESSAGES_TIME / ScaleFactor), ?MODULE,
+                      send_messages, [Players, ScaleFactor]).

@@ -15,6 +15,7 @@
 -include_lib("player/include/player_serv.hrl").
 
 -define(SIMULATION_TIME, (1000 * 60 * 60 * 10)).
+-define(ANALYZE_TIME, (1000 * 30)).
 
 -define(SYNC_IP_ADDRESS, {127, 0, 0, 1}).
 -define(SYNC_BASE, 4000).
@@ -176,6 +177,7 @@ init(Parent) ->
     SimulatorModule:send_simulated_messages(AllPlayers),
     %% Create timers
     erlang:send_after(?SIMULATION_TIME, self(), simulation_ended),
+    timer:send_interval(?ANALYZE_TIME, analyze),
     ?daemon_log_tag_fmt(system, "Master server has been started", []),
     {ok, #state{parent = Parent, players = AllPlayers}}.
 
@@ -230,11 +232,14 @@ message_handler(#state{parent = Parent, source = Source, target = Target,
             ok = ping(),
             noreply;
         {cast, analyze} ->
-            ok = stats_db:analyze(),
+            ok = stats_db:format_analysis(stats_db:analyze()),
             noreply;
         %%
         %% Below follows handling of internally generated messages
         %%
+        analyze ->
+            ok = stats_db:format_analysis(stats_db:analyze()),
+            noreply;
         simulation_ended ->
             noreply;
         {system, From, Request} ->
