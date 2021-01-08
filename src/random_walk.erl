@@ -1,6 +1,6 @@
 -module(random_walk).
--export([get_area/0, get_location/0, get_location_index/0,
-         get_location_generator/1, neighbour_distance/0]).
+-export([get_location/0, get_location_index/0, get_location_generator/1,
+         neighbour_distance/0]).
 -export([send_simulated_messages/1]).
 -export([send_messages/2]).
 
@@ -11,12 +11,6 @@
 
 -define(LOCATION, stolofsgatan).
 -define(RESEND_MESSAGES_TIME, 60000).
-
-%% Exported: get_area
-
-get_area() ->
-    #simulator_location{area = Area} = simulator_location:get(?LOCATION),
-    Area.
 
 %% Exported: get_location
 
@@ -33,8 +27,7 @@ get_location_index() ->
             ToString ->
                 ?l2i(ToString)
         end,
-    Location = simulator_location:get(?LOCATION),
-    get_location_index(1, To, scale_factor(), Location).
+    get_location_index(1, To, scale_factor(), get_location()).
 
 scale_factor() ->
     case os:getenv("SCALEFACTOR") of
@@ -162,7 +155,7 @@ maybe_change_direction(MinCoordinate, Coordinate, Direction, Movement, Side) ->
 %% Exported: neighbour_distance
 
 neighbour_distance() ->
-    Location = simulator_location:get(?LOCATION),
+    Location = get_location(),
     Location#simulator_location.neighbour_distance_in_degrees.
 
 %% Exported: send_simulated_messages

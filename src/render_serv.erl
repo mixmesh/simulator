@@ -5,6 +5,7 @@
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("player/include/player_serv.hrl").
+-include("simulator_location.hrl").
 
 -record(state,
         {parent :: pid(),
@@ -17,8 +18,8 @@
 
 start_link() ->
     SimulatorModule = config:lookup([simulator, 'data-set']),
-    Area = SimulatorModule:get_area(),
-    {MinX, MaxX, MinY, MaxY} = Area,
+    #simulator_location{area = {MinX, MaxX, MinY, MaxY}} =
+        SimulatorModule:get_location(),
     NeighbourDistance = SimulatorModule:neighbour_distance(),
     ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
     ?spawn_server_opts(fun(Parent) -> init(Parent, SimulatorModule) end,

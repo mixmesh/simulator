@@ -1,5 +1,5 @@
 -module(mesh).
--export([get_area/0, get_location_index/0, get_location_generator/1,
+-export([get_location/0, get_location_index/0, get_location_generator/1,
          neighbour_distance/0]).
 -export([send_simulated_messages/1]).
 
@@ -8,11 +8,10 @@
 
 -define(LOCATION, stolofsgatan).
 
-%% Exported get_area
+%% Exported: get_location
 
-get_area() ->
-    #simulator_location{area = Area} = simulator_location:get(?LOCATION),
-    Area.
+get_location() ->
+    simulator_location:get(?LOCATION).
 
 %% Exported: get_location_index
 
@@ -22,7 +21,9 @@ get_location_index() ->
 	    NStr -> list_to_integer(NStr)
 	end,
     true = (N =< 9),
-    {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude} = get_area(),
+    #simulator_location{
+       area = {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude}} =
+        get_location(),
     DeltaLongitude = (MaxLongitude - MinLongitude) / (N + 2),
     DeltaLatitude = (MaxLatitude - MinLatitude) / (N + 2),
     OffsetLongitude = 0, %% DeltaLongitude/15,
@@ -52,7 +53,9 @@ neighbour_distance() ->
             false -> 8;
             NStr -> list_to_integer(NStr)
         end,
-    {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude} = get_area(),
+    #simulator_location{
+       area = {MinLongitude, MaxLongitude, MinLatitude, MaxLatitude}} =
+        get_location(),
     DeltaLongitude = (MaxLongitude - MinLongitude)/ (N + 2),
     DeltaLatitude = (MaxLatitude - MinLatitude) / (N + 2),
     max(DeltaLongitude, DeltaLatitude) * 1.1.
