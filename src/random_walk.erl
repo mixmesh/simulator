@@ -1,6 +1,6 @@
 -module(random_walk).
 -export([get_location/0, get_location_index/0, get_location_generator/1,
-         neighbour_distance/0]).
+         neighbour_distance/0, center_target/0]).
 -export([send_simulated_messages/1]).
 -export([send_messages/2]).
 
@@ -180,3 +180,8 @@ send_messages(Players, ScaleFactor) ->
       end, Players),
     timer:apply_after(trunc(?RESEND_MESSAGES_TIME / ScaleFactor), ?MODULE,
                       send_messages, [Players, ScaleFactor]).
+
+%% Exported: center_target
+
+center_target() ->
+    true.

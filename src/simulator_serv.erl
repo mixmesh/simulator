@@ -13,6 +13,7 @@
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("player/include/player_serv.hrl").
+-include("simulator_location.hrl").
 
 -define(SIMULATION_TIME, (1000 * 60 * 60 * 10)).
 -define(ANALYZE_TIME, (1000 * 30)).
@@ -41,7 +42,8 @@
          source = none :: none | binary(),
          target = none :: none | binary(),
          players :: [#player{}],
-         k :: integer()}).
+         k :: integer(),
+         center_target :: no | {yes, {number(), number()}}}).
 
 %% Exported: start_link
 
@@ -102,12 +104,13 @@ init(Parent) ->
     %%io:format("player_message table created ~p\n", [ets:info(player_message)]),
     player_info:new(),
     SimulatorModule = config:lookup([simulator, 'data-set']),
+    Location = SimulatorModule:get_location(),
     true = player_db:new(),
     true = stats_db:new(),
     %% FIXME: find a place
     %% ets:new(endpoint_reg,[public, named_table, {write_concurrency, true}]),
-
-    %% Start simulated players -
+    
+    %% Start simulated players
     LocationIndex = SimulatorModule:get_location_index(),
     AllPlayers =
         lists:foldl(
@@ -183,8 +186,16 @@ init(Parent) ->
     erlang:send_after(?SIMULATION_TIME, self(), simulation_ended),
     timer:send_interval(?ANALYZE_TIME, analyze),
     K = config:lookup([player, 'sync-server', k]),
+    CenterTarget =
+        case SimulatorModule:center_target() of
+            true ->
+                {yes, Location#simulator_location.geodetic_center};
+            false ->
+                no
+        end,
     ?daemon_log_tag_fmt(system, "Master server has been started", []),
-    {ok, #state{parent = Parent, players = AllPlayers, k = K}}.
+    {ok, #state{parent = Parent, players = AllPlayers, k = K,
+                center_target = CenterTarget}}.
 
 get_child_pid(SupervisorPid, ChildId) ->
     {value, {_Id, ChildPid, _Type, _Modules}} =
@@ -192,13 +203,15 @@ get_child_pid(SupervisorPid, ChildId) ->
     {ok, ChildPid}.
 
 message_handler(#state{parent = Parent, source = Source, target = Target,
-                       players = Players, k = K} = State) ->
+                       players = Players, k = K,
+                       center_target = CenterTarget} = State) ->
     receive
         {call, From, stop} ->
             {stop, From, ok};
         {cast, {elect_source_and_target, MessageMD5, SourceNym, TargetNym}}
           when Source == none andalso Target == none ->
-            ok = elect_players(Players, MessageMD5, SourceNym, TargetNym),
+            ok = elect_players(Players, CenterTarget, MessageMD5, SourceNym,
+                               TargetNym),
             {noreply, State#state{source = SourceNym, target = TargetNym}};
         {cast, {elect_source_and_target, _MessageMD5, _SourceNym, _TargetNym}} ->
             noreply;
@@ -256,14 +269,14 @@ message_handler(#state{parent = Parent, source = Source, target = Target,
             noreply
     end.
 
-elect_players(Players, MessageMD5, SourceNym, TargetNym) ->
+elect_players(Players, CenterTarget, MessageMD5, SourceNym, TargetNym) ->
     ets:insert(player_message, {MessageMD5, true}),
     {value, #player{player_serv_pid = SourcePlayerServPid}} =
         lists:keysearch(SourceNym, #player.nym, Players),
     ok = player_serv:become_source(SourcePlayerServPid, TargetNym, MessageMD5),
     {value, #player{player_serv_pid = TargetPlayerServPid}} =
         lists:keysearch(TargetNym, #player.nym, Players),
-    ok = player_serv:become_target(TargetPlayerServPid, MessageMD5),
+    ok = player_serv:become_target(TargetPlayerServPid, CenterTarget, MessageMD5),
     lists:foreach(
       fun(#player{nym = Nym,
                   player_serv_pid = ForwarderPlayerServPid})

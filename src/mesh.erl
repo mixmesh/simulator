@@ -1,6 +1,6 @@
 -module(mesh).
 -export([get_location/0, get_location_index/0, get_location_generator/1,
-         neighbour_distance/0]).
+         neighbour_distance/0, center_target/0]).
 -export([send_simulated_messages/1]).
 
 -include_lib("apptools/include/log.hrl").
@@ -64,3 +64,9 @@ neighbour_distance() ->
 
 send_simulated_messages(_Players) ->
     nyi.
+
+
+%% Exported: center_target
+
+center_target() ->
+    false.
