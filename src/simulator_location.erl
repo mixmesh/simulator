@@ -3,10 +3,8 @@
 
 -include("simulator_location.hrl").
 
-%% https://developers.google.com/maps/documentation/maps-static/start
-
 %% St Olofsgatan
-%% https://maps.googleapis.com/maps/api/staticmap?center=59.865906,17.644667&zoom=16&size=500x500&scale=2&key=AIzaSyA2xg80wkvGOFsLdHZ72BhH5PmpDDA3lvQ
+%% https://maps.googleapis.com/maps/api/staticmap?center=59.865906,17.644667&zoom=16&size=500x500&scale=2&key=<YOUR-KEY>
 get(stolofsgatan) ->
     BackgroundFilename =
         filename:join([code:priv_dir(simulator), "stolofsgatan.png"]),
