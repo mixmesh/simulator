@@ -28,7 +28,7 @@ demo() ->
 location() ->
     %% St Olofsgatan 60A
     %% https://developers.google.com/maps/documentation/maps-static/start
-    %% https://maps.googleapis.com/maps/api/staticmap?center=59.865906,17.644667&zoom=16&size=400x400&scale=2&key=AIzaSyA2xg80wkvGOFsLdHZ72BhH5PmpDDA3lvQ
+    %% https://maps.googleapis.com/maps/api/staticmap?center=59.865906,17.644667&zoom=16&size=400x400&scale=2&key=<YOUR-KEY>
     Side = 400,
     Longitude = 17.644667,
     Latitude = 59.865906,
