@@ -10,7 +10,7 @@
 -include("simulator_location.hrl").
 
 -define(LOCATION, stolofsgatan).
--define(RESEND_MESSAGES_TIME, 60000).
+-define(RESEND_MESSAGES_TIME, (60000 * 4)).
 
 %% Exported: get_location
 
