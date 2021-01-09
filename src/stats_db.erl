@@ -1,9 +1,9 @@
 -module(stats_db).
 -export([new/0]).
--export([message_buffered/1, message_created/3, message_duplicate_received/3,
-         message_received/3, messages_relayed/1]).
+-export([message_created/3, message_duplicate_received/3, message_received/3,
+         messages_relayed/1, messages_overwritten/1]).
 -export([dump/0, save/0, save/1]).
--export([analyze/0, analyze/1, format_analysis/1]).
+-export([analyze/0, analyze/1, format_analysis/2]).
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/shorthand.hrl").
@@ -16,16 +16,8 @@ new() ->
                                 {write_concurrency, true}]),
     Timestamp = os:system_time(millisecond),
     true = ets:insert(?MODULE, {messages_relayed, 0}),
+    true = ets:insert(?MODULE, {messages_overwritten, 0}),
     ets:insert(?MODULE, {start_time, Timestamp}).
-
-%% Exported: message_buffered
-
-message_buffered(Nym) ->
-    Timestamp = os:system_time(millisecond),
-    ?dbg_log({message_buffered, Timestamp, Nym}),
-    ets:insert(?MODULE,
-               {{message_buffered, Nym, erlang:unique_integer()},
-                Timestamp}).
 
 %% Exported: message_create
 
@@ -62,6 +54,12 @@ message_received(MessageMD5, SenderNym, RecipientNym) ->
 messages_relayed(N) ->
     [{_, M}] = ets:lookup(?MODULE, messages_relayed),
     ets:insert(?MODULE, {messages_relayed, N + M}).
+
+%% Exported: messages_overwritten
+
+messages_overwritten(N) ->
+    [{_, M}] = ets:lookup(?MODULE, messages_overwritten),
+    ets:insert(?MODULE, {messages_overwritten, N + M}).
 
 %% Exported: dump
 
@@ -117,13 +115,15 @@ perform_analysis(Tid) ->
                   end
           end, {0, 0, []}, ?MODULE),
     [{_, MessagesRelayed}] = ets:lookup(?MODULE, messages_relayed),
+    [{_, MessagesOverwritten}] = ets:lookup(?MODULE, messages_overwritten),
     #stats_db_analysis{
        start_time = StartTime,
        current_time = CurrentTime,
        created_messages = CreatedMessages,
        delivered_messages = DeliveredMessages,
        delivery_delays = DeliveryDelays,
-       relayed_messages = MessagesRelayed}.
+       relayed_messages = MessagesRelayed,
+       overwritten_messages = MessagesOverwritten}.
 
 %% format_analysis
 
@@ -133,7 +133,9 @@ format_analysis(#stats_db_analysis{
                    created_messages = CreatedMessages,
                    delivered_messages = DeliveredMessages,
                    delivery_delays = DeliveryDelays,
-                   relayed_messages = RelayedMessages}) ->
+                   relayed_messages = RelayedMessages,
+                   overwritten_messages = OverwrittenMessages},
+                K) ->
     ScaleFactor =
         case os:getenv("SCALEFACTOR") of
             false ->
@@ -147,16 +149,17 @@ format_analysis(#stats_db_analysis{
     ScaledSimulatorRunTimeInMinutes = SimulatorRunTimeInMinutes * ScaleFactor,
     io:format("Scaled simulator run time: ~s minutes\n",
               [number_to_string(ScaledSimulatorRunTimeInMinutes)]),
+    io:format("Created messages: ~w (~w)\n",
+              [CreatedMessages, CreatedMessages * K]),
+    io:format("Delivered messages: ~w\n", [DeliveredMessages]),
+    io:format("Relayed messages: ~w\n", [RelayedMessages]),
+    io:format("Overwritten messages: ~w\n", [OverwrittenMessages]),
     case CreatedMessages of
         0 ->
             ok;
         _ ->
-            io:format("Created messages: ~w\n", [CreatedMessages]),
-            io:format("Delivered messages: ~w\n", [DeliveredMessages]),
-            io:format("Relayed messages: ~w\n", [RelayedMessages]),
             io:format("Delivery rate: ~s\n",
-                      [number_to_string(
-                         DeliveredMessages / CreatedMessages)])
+                      [number_to_string(DeliveredMessages / CreatedMessages)])
     end,
     case DeliveredMessages of
         0 ->
@@ -176,7 +179,5 @@ format_analysis(#stats_db_analysis{
     end,
     ok.
 
-number_to_string(Integer) when is_integer(Integer) ->
-    ?i2l(Integer);
 number_to_string(Float) when is_float(Float) ->
     float_to_list(Float, [{decimals, 4}, compact]).

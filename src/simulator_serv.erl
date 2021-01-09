@@ -40,7 +40,8 @@
         {parent :: pid(),
          source = none :: none | binary(),
          target = none :: none | binary(),
-         players :: [#player{}]}).
+         players :: [#player{}],
+         k :: integer()}).
 
 %% Exported: start_link
 
@@ -96,13 +97,10 @@ analyze() ->
 
 init(Parent) ->
     rand:seed(exsss),
-
-    %% message_md5 keep track on messages on simulated nodes (like a global server..)
+    %% Keeps track on messages on simulated nodes (like a global server..)
     ets:new(player_message, [public, named_table]),
     %%io:format("player_message table created ~p\n", [ets:info(player_message)]),
-
     player_info:new(),
-
     SimulatorModule = config:lookup([simulator, 'data-set']),
     true = player_db:new(),
     true = stats_db:new(),
@@ -184,8 +182,9 @@ init(Parent) ->
     %% Create timers
     erlang:send_after(?SIMULATION_TIME, self(), simulation_ended),
     timer:send_interval(?ANALYZE_TIME, analyze),
+    K = config:lookup([player, 'sync-server', k]),
     ?daemon_log_tag_fmt(system, "Master server has been started", []),
-    {ok, #state{parent = Parent, players = AllPlayers}}.
+    {ok, #state{parent = Parent, players = AllPlayers, k = K}}.
 
 get_child_pid(SupervisorPid, ChildId) ->
     {value, {_Id, ChildPid, _Type, _Modules}} =
@@ -193,7 +192,7 @@ get_child_pid(SupervisorPid, ChildId) ->
     {ok, ChildPid}.
 
 message_handler(#state{parent = Parent, source = Source, target = Target,
-                       players = Players} = State) ->
+                       players = Players, k = K} = State) ->
     receive
         {call, From, stop} ->
             {stop, From, ok};
@@ -238,13 +237,13 @@ message_handler(#state{parent = Parent, source = Source, target = Target,
             ok = ping(),
             noreply;
         {cast, analyze} ->
-            ok = stats_db:format_analysis(stats_db:analyze()),
+            ok = stats_db:format_analysis(stats_db:analyze(), K),
             noreply;
         %%
         %% Below follows handling of internally generated messages
         %%
         analyze ->
-            ok = stats_db:format_analysis(stats_db:analyze()),
+            ok = stats_db:format_analysis(stats_db:analyze(), K),
             noreply;
         simulation_ended ->
             noreply;
