@@ -1,8 +1,6 @@
 -module(random_walk).
 -export([get_location/0, get_location_index/0, get_location_generator/1,
-         neighbour_distance/0, center_target/0]).
--export([send_simulated_messages/1]).
--export([send_messages/2]).
+         neighbour_distance/0, send_simulated_messages/1, center_target/0]).
 
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("apptools/include/log.hrl").
@@ -10,7 +8,10 @@
 -include("simulator_location.hrl").
 
 -define(LOCATION, stolofsgatan).
--define(RESEND_MESSAGES_TIME, (60000 * 4)).
+-define(DEFAULT_NUMBER_OF_PLAYERS, 100).
+-define(INITIAL_DELAY, 5000).
+-define(RESEND_TIME, (60000 * 4)).
+-define(TARGET_NYM, <<"p1">>).
 
 %% Exported: get_location
 
@@ -20,22 +21,8 @@ get_location() ->
 %% Exported: get_location_index
 
 get_location_index() ->
-    To =
-        case os:getenv("NPLAYER") of
-            false ->
-                100;
-            ToString ->
-                ?l2i(ToString)
-        end,
-    get_location_index(1, To, scale_factor(), get_location()).
-
-scale_factor() ->
-    case os:getenv("SCALEFACTOR") of
-        false ->
-            1;
-        ScaleFactorString ->
-            ?l2i(ScaleFactorString)
-    end.
+    To = simulator:nplayer(?DEFAULT_NUMBER_OF_PLAYERS),
+    get_location_index(1, To, simulator:scale_factor(), get_location()).
 
 get_location_index(From, To, _ScaleFactor, _Location) when From > To ->
     [];
@@ -161,25 +148,10 @@ neighbour_distance() ->
 %% Exported: send_simulated_messages
 
 send_simulated_messages(Players) ->
-    timer:apply_after(5000, ?MODULE, send_messages,
-                      [Players, scale_factor()]).
-
-%% Exported: send_messages
-
-send_messages(Players, ScaleFactor) ->
-    lists:foreach(
-      fun(#player{nym = _Nym, player_serv_pid = PlayerServPid}) ->
-              Payload = ?i2b(erlang:unique_integer([positive])),
-              spawn(
-                fun() ->
-                        io:format(">"),
-                        player_serv:send_message(PlayerServPid, <<"p1">>,
-                                                 Payload),
-                        io:format("<")
-                end)
-      end, Players),
-    timer:apply_after(trunc(?RESEND_MESSAGES_TIME / ScaleFactor), ?MODULE,
-                      send_messages, [Players, ScaleFactor]).
+    ScaleFactor = simulator:scale_factor(),
+    timer:apply_after(trunc(?INITIAL_DELAY / ScaleFactor),
+                      simulator, send_messages,
+                      [Players, ScaleFactor, ?TARGET_NYM, ?RESEND_TIME]).
 
 %% Exported: center_target
 

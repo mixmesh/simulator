@@ -1,13 +1,10 @@
 -module(simulator).
 -export([initialize/5]).
 -export([add_players/1, update_players/1]).
+-export([nplayer/1, scale_factor/0, send_messages/4]).
 
 -include_lib("apptools/include/shorthand.hrl").
-
--define(WINDOW_WIDTH, 1000.0).
--define(WINDOW_HEIGHT, 1000.0).
-
--define(EARTH_RADIUS, 6357000).
+-include_lib("player/include/player_serv.hrl").
 
 -define(IS_NOTHING, 0).
 -define(IS_FORWARDER, 1).
@@ -68,3 +65,43 @@ convert_updated_values([{pick_mode, {is_target, _}}|Rest]) ->
     [{pick_mode, ?IS_TARGET}|convert_updated_values(Rest)];
 convert_updated_values([UpdatedValue|Rest]) ->
     [UpdatedValue|convert_updated_values(Rest)].
+
+%% Exported: nplayer
+
+nplayer(DefaultValue) ->
+    case os:getenv("NPLAYER") of
+        false ->
+            DefaultValue;
+        ToString ->
+            ?l2i(ToString)
+    end.
+
+%% Exported: scale_factor
+
+scale_factor() ->
+    case os:getenv("SCALEFACTOR") of
+        false ->
+            1;
+        ScaleFactorString ->
+            ?l2i(ScaleFactorString)
+    end.
+
+%% Exported: send_messages
+
+send_messages(Players, ScaleFactor, TargetNym, ResendTime) ->
+    lists:foreach(
+      fun(#player{nym = Nym}) when TargetNym == Nym ->
+              ok;
+         (#player{player_serv_pid = PlayerServPid}) ->
+              Payload = ?i2b(erlang:unique_integer([positive])),
+              spawn(
+                fun() ->
+                        io:format(">"),
+                        player_serv:send_message(
+                          PlayerServPid, TargetNym, Payload),
+                        io:format("<")
+                end)
+      end, Players),
+    timer:apply_after(trunc(ResendTime / ScaleFactor), ?MODULE,
+                      send_messages,
+                      [Players, ScaleFactor, TargetNym, ResendTime]).
