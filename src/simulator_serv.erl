@@ -42,8 +42,7 @@
          source = none :: none | binary(),
          target = none :: none | binary(),
          players :: [#player{}],
-         k :: integer(),
-         center_target :: no | {yes, {number(), number()}}}).
+         k :: integer()}).
 
 %% Exported: start_link
 
@@ -176,26 +175,30 @@ init(Parent) ->
 			   smtp_address = {?SMTP_IP_ADDRESS, SmtpPort}} |
 		   Players]
           end, [], LocationIndex),
-    %% Order players to start location updating
+    %% Start player location updating
     lists:foreach(fun(#player{player_serv_pid = PlayerServPid}) ->
                           player_serv:start_location_updating(PlayerServPid)
                   end, AllPlayers),
-    %% Ask the simulator module to send simulated messages
-    SimulatorModule:send_simulated_messages(AllPlayers),
-    %% Create timers
+    %% Should we put a player in the center of the area?    
+    case SimulatorModule:center_target() of
+        {true, Nym} ->
+            {found, #player{player_serv_pid = PlayerServPid}} =
+                get_player(Nym, AllPlayers),
+            spawn(fun() ->
+                          timer:sleep(5000),
+                          ok = player_serv:pin_location(
+                                 PlayerServPid,
+                                 Location#simulator_location.geodetic_center),
+                          SimulatorModule:send_simulated_messages(AllPlayers)
+                  end);
+        false ->
+            SimulatorModule:send_simulated_messages(AllPlayers)
+    end,
     erlang:send_after(?SIMULATION_TIME, self(), simulation_ended),
     timer:send_interval(?ANALYZE_TIME, analyze),
     K = config:lookup([player, 'sync-server', k]),
-    CenterTarget =
-        case SimulatorModule:center_target() of
-            true ->
-                {yes, Location#simulator_location.geodetic_center};
-            false ->
-                no
-        end,
     ?daemon_log_tag_fmt(system, "Master server has been started", []),
-    {ok, #state{parent = Parent, players = AllPlayers, k = K,
-                center_target = CenterTarget}}.
+    {ok, #state{parent = Parent, players = AllPlayers, k = K}}.
 
 get_child_pid(SupervisorPid, ChildId) ->
     {value, {_Id, ChildPid, _Type, _Modules}} =
@@ -203,15 +206,13 @@ get_child_pid(SupervisorPid, ChildId) ->
     {ok, ChildPid}.
 
 message_handler(#state{parent = Parent, source = Source, target = Target,
-                       players = Players, k = K,
-                       center_target = CenterTarget} = State) ->
+                       players = Players, k = K} = State) ->
     receive
         {call, From, stop} ->
             {stop, From, ok};
         {cast, {elect_source_and_target, MessageMD5, SourceNym, TargetNym}}
           when Source == none andalso Target == none ->
-            ok = elect_players(Players, CenterTarget, MessageMD5, SourceNym,
-                               TargetNym),
+            ok = elect_players(Players, MessageMD5, SourceNym, TargetNym),
             {noreply, State#state{source = SourceNym, target = TargetNym}};
         {cast, {elect_source_and_target, _MessageMD5, _SourceNym, _TargetNym}} ->
             noreply;
@@ -269,14 +270,14 @@ message_handler(#state{parent = Parent, source = Source, target = Target,
             noreply
     end.
 
-elect_players(Players, CenterTarget, MessageMD5, SourceNym, TargetNym) ->
+elect_players(Players, MessageMD5, SourceNym, TargetNym) ->
     ets:insert(player_message, {MessageMD5, true}),
-    {value, #player{player_serv_pid = SourcePlayerServPid}} =
-        lists:keysearch(SourceNym, #player.nym, Players),
+    {found, #player{player_serv_pid = SourcePlayerServPid}} =
+        get_player(SourceNym, Players),
     ok = player_serv:become_source(SourcePlayerServPid, TargetNym, MessageMD5),
-    {value, #player{player_serv_pid = TargetPlayerServPid}} =
-        lists:keysearch(TargetNym, #player.nym, Players),
-    ok = player_serv:become_target(TargetPlayerServPid, CenterTarget, MessageMD5),
+    {found, #player{player_serv_pid = TargetPlayerServPid}} =
+        get_player(TargetNym, Players),
+    ok = player_serv:become_target(TargetPlayerServPid, MessageMD5),
     lists:foreach(
       fun(#player{nym = Nym,
                   player_serv_pid = ForwarderPlayerServPid})

@@ -132,4 +132,4 @@ send_simulated_messages(Players) ->
 %% Exported: center_target
 
 center_target() ->
-    true.
+    {true, ?TARGET_NYM}.

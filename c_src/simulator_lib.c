@@ -298,7 +298,6 @@ void render() {
 
       make_label(up[i], &rp[i]);
       draw_label(up[i]->label, rp[i].x, rp[i].y);
-
       draw_buffer(up[i]->label, up[i]->buffer_size);
 
       // Draw lines between neighbouring players
