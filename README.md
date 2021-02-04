@@ -1,8 +1,8 @@
 # A Simulator
 
 > Installation instructions and information on how to start the
-> simulator can be found in the [Obscrete
-> repository](https://github.com/obscrete/obscrete/blob/master/README.md).
+> simulator can be found in the [Mixmesh
+> repository](https://github.com/mixmesh/mixmesh/blob/master/README.md).
 
 The default simulation shows an 1x1 km square area in Silicon Valley
 (anchor point: 37.41504612935415, -121.96489836466651). This square
@@ -10,7 +10,7 @@ house 100 players which move about with an average velocity of 25
 km/h. As soon as players come closer than 50 meters to each other they
 exchange re-encrypted messages.
 
-![A 1x1 km square area in Silicon Valley](https://github.com/obscrete/obscrete/blob/master/doc/simulation.gif?raw=true)
+![A 1x1 km square area in Silicon Valley](https://github.com/mixmesh/mixmesh/blob/master/doc/simulation.gif?raw=true)
 
 The players are labeled p1-p100:XYZ (where XYZ is the size of each
 player's message buffer). In the animation above p42 sends an email to

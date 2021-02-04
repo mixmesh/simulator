@@ -7,7 +7,7 @@ In order to use the Roma data set in the simulator do the following:
 
 This will take several minutes...
 
-When done update ./etc/obscrete.conf with the following entry:
+When done update ./etc/mixmesh.conf with the following entry:
 
 ```
 "simulator": {
@@ -18,4 +18,4 @@ When done update ./etc/obscrete.conf with the following entry:
 
 Start the simulator:
 
-`./bin/obscrete --config etc/obscrete.conf`
+`./bin/mixmesh --config etc/mixmesh.conf`

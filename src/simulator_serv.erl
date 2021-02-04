@@ -114,7 +114,7 @@ init(Parent) ->
     AllPlayers =
         lists:foldl(
           fun({Nym, I, Opaque}, Players) ->
-                  PlayersDir = <<"/tmp/obscrete/players">>,
+                  PlayersDir = <<"/tmp/mixmesh/players">>,
                   Keys = elgamal:generate_key_pair(
                            Nym, binary:decode_unsigned(Nym)),
                   GetLocationGenerator =
