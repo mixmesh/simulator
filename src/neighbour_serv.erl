@@ -91,11 +91,14 @@ inform_players(Tree,
                NeighbourDistance) ->
     NewNeighbours = get_neighbours(Tree, NeighbourDistance, Nym),
     lists:foreach(
-      fun(#player{sync_address = {SyncIpAddress, SyncPort}}) ->
+      fun(#player{nym = NNym, sync_address = {SyncIpAddress, SyncPort}}) ->
 	      OutPort = SyncPort + 1, %% simulate outport
+	      [#db_player{ x=Longitude,
+			   y=Latitude }] = player_db:lookup(NNym),
               ok = nodis_serv:simping(
                      NodisServPid, SyncIpAddress, OutPort,
-                     ?UPDATE_TIME)
+		     #{ ping_interval => ?UPDATE_TIME,
+			lat => Latitude, long => Longitude })
       end, NewNeighbours),
     [{Player, NewNeighbours}|inform_players(Tree, Rest, NeighbourDistance)].
 
