@@ -41,7 +41,6 @@ mesh_point(I, J) ->
 
 get_location_generator({Longitude, Latitude, Timestamp, TimeStep}) ->
     fun() ->
-            %% io:format("BAJS: ~p\n", [Timestamp]),
 	    NextTimestamp = Timestamp + TimeStep,
 	    {{NextTimestamp, Longitude, Latitude},
 	     get_location_generator(
