@@ -10,8 +10,10 @@
 start([SourceCertFilename, DataSet]) ->
     MixmeshDir = <<"/tmp/mixmesh">>,
     GlobalPkiDir = filename:join([MixmeshDir, <<"global-pki">>]),
+    SSLDir = filename:join([GlobalPkiDir, <<"ssl">>]),
     try
-        true = mkconfig:ensure_libs(stdout, [GlobalPkiDir], true),
+        true = mkconfig:ensure_libs(stdout, [SSLDir], true),
+        true = mkconfig:copy_certificate(stdout, SourceCertFilename, SSLDir),
         PlayersDir = filename:join([MixmeshDir, <<"players">>]),
         ok = create_players(SourceCertFilename, PlayersDir,
                             get_location_index(DataSet)),
