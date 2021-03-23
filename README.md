@@ -62,8 +62,8 @@ To use any of these data sets the ./src/simulator_serv.erl (and more) have to be
   <dt>./src/render_serv.erl</dt>
   <dd>A render server which collects data and send it down to a NIF that
   do the actual demo rendering on screen, i.e. using Simple2D</dd>
-  <dt>./src/simulator_pki_serv.erl</dt>
-  <dd>A simulator server which works as an extra PKI server keeping
+  <dt>./src/simulator_keydir_serv.erl</dt>
+  <dd>A simulator server which works as an extra keydir server keeping
   track of all player instances</dd>
   <dt>./src/simulator.erl</dt>
   <dd>A helper module which contains a marshalling API on top of

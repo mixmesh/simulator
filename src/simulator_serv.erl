@@ -30,8 +30,8 @@
 -define(HTTP_IP_ADDRESS, {127, 0, 0, 1}).
 -define(HTTP_BASE, 48000).
 
--define(PKI_IP_ADDRESS, {127, 0, 0, 1}).
--define(PKI_PORT, 11112).
+-define(KEYDIR_IP_ADDRESS, {127, 0, 0, 1}).
+-define(KEYDIR_PORT, 11112).
 
 -define(BUFFER_SIZE, 1000).
 -define(F, 0.2).
@@ -128,9 +128,9 @@ init(Parent) ->
                   Pop3PasswordDigest =
                       <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97,183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
                   HttpPassword = <<"hello">>,
-                  %%PkiMode = {remote, <<"baz">>,
-                  %%           {tcp_only, {?PKI_IP_ADDRESS, ?PKI_PORT}}},
-                  PkiMode = local,
+                  %%KeydirMode = {remote, <<"baz">>,
+                  %%           {tcp_only, {?KEYDIR_IP_ADDRESS, ?KEYDIR_PORT}}},
+                  KeydirMode = local,
 		  SmtpPort = ?SMTP_BASE+I,
 		  Pop3Port = ?POP3_BASE+I,
 		  SyncPort = ?SYNC_BASE+2*I,
@@ -157,7 +157,7 @@ init(Parent) ->
                             pop3_password_digest = Pop3PasswordDigest,
                             http_address = [{?HTTP_IP_ADDRESS, HttpPort}],
                             http_password = HttpPassword,
-                            pki_mode = PkiMode}]),
+                            keydir_mode = KeydirMode}]),
                   {ok, PlayerServPid} =
                       get_child_pid(PlayerSupPid, player_serv),
                   {ok, NodisServPid} =

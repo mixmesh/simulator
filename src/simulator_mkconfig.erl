@@ -9,8 +9,8 @@
 
 start([SourceCertFilename, DataSet]) ->
     MixmeshDir = <<"/tmp/mixmesh">>,
-    RemotePkiDir = filename:join([MixmeshDir, <<"remote-pki">>]),
-    SSLDir = filename:join([RemotePkiDir, <<"ssl">>]),
+    RemoteKeydirDir = filename:join([MixmeshDir, <<"remote-keydir">>]),
+    SSLDir = filename:join([RemoteKeydirDir, <<"ssl">>]),
     try
         true = mkconfig:ensure_libs(stdout, [SSLDir], true),
         true = mkconfig:copy_certificate(stdout, SourceCertFilename, SSLDir),
