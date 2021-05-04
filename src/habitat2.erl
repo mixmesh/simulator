@@ -22,7 +22,8 @@
 
 demo() ->
     {_X, _Y, _Z, Side, MetersPerPixel} = location(),
-    Speed = 2.8, %% 10 km/h
+    %%Speed = 2.8, %% 10 km/h
+    Speed = 8, %% 10 km/h
     demo(Side, Side, MetersPerPixel, Speed, "home.png").
 
 location() ->
@@ -43,7 +44,7 @@ location() ->
 demo(Width, Height, MetersPerPixel, Speed, BackgroundFilename) ->
     application:ensure_all_started(epx),
     Pixmap = epx:pixmap_create(Width, Height, ?PIXEL_FORMAT),
-    epx:pixmaps_attach(Pixmap),
+    epx:pixmap_attach(Pixmap),
     Filename = filename:join([code:priv_dir(simulator), BackgroundFilename]),
     {ok, BackgroundImage} = epx_image:load(Filename),
     Background = hd(epx_image:pixmaps(BackgroundImage)),

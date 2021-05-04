@@ -9,11 +9,17 @@
 
 start([SourceCertFilename, DataSet]) ->
     MixmeshDir = <<"/tmp/mixmesh">>,
-    RemoteKeydirDir = filename:join([MixmeshDir, <<"remote-keydir">>]),
-    SSLDir = filename:join([RemoteKeydirDir, <<"ssl">>]),
+    RemoteKeydirServerSSLDir =
+        filename:join([MixmeshDir, <<"remote-keydir-server">>, <<"ssl">>]),
+    KeydirServiceSSLDir =
+        filename:join([MixmeshDir, <<"keydir-service">>, <<"ssl">>]),
     try
-        true = mkconfig:ensure_libs(stdout, [SSLDir], true),
-        true = mkconfig:copy_certificate(stdout, SourceCertFilename, SSLDir),
+        true = mkconfig:ensure_libs(
+                 stdout, [RemoteKeydirServerSSLDir, KeydirServiceSSLDir], true),
+        true = mkconfig:copy_certificate(stdout, SourceCertFilename,
+                                         RemoteKeydirServerSSLDir),
+        true = mkconfig:copy_certificate(stdout, SourceCertFilename,
+                                         KeydirServiceSSLDir),
         PlayersDir = filename:join([MixmeshDir, <<"players">>]),
         ok = create_players(SourceCertFilename, PlayersDir,
                             get_location_index(DataSet)),
