@@ -128,8 +128,7 @@ init(Parent) ->
                   Pop3PasswordDigest =
                       <<237,85,139,97,91,27,175,166,8,177,220,107,101,160,138, 249,172,253,25,226,211,31,248,2,107,122,138,12,220,97,183,183,182,89,251,10,55,198,134,85,162,164,229,128,66, 117,157,133,43,78,200,39,225,175,154,203,77,253,243,200, 31,87,99,156>>,
                   HttpPassword = <<"hello">>,
-                  %%KeydirMode = {remote, <<"baz">>,
-                  %%           {tcp_only, {?KEYDIR_IP_ADDRESS, ?KEYDIR_PORT}}},
+                  %%KeydirMode = {service, <<"baz">>, {?KEYDIR_IP_ADDRESS, ?KEYDIR_PORT}},
                   KeydirMode = local,
 		  SmtpPort = ?SMTP_BASE+I,
 		  Pop3Port = ?POP3_BASE+I,
