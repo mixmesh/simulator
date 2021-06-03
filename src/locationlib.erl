@@ -11,7 +11,9 @@
 -define(PIXELS_PER_LONGITUDE_DEGREE, (?MERCATOR_RANGE / 360)).
 -define(PIXELS_PER_LONGITUDE_RADIAN, (?MERCATOR_RANGE / (2 * ?PI))).
 
+%%
 %% Exported: geodetic_to_ecef_coordinates
+%%
 
 %% https://en.m.wikipedia.org/wiki/Geographic_coordinate_conversion#From_geodetic_to_ECEF_coordinates 
 %% https://en.m.wikipedia.org/wiki/Geodetic_datum#World_Geodetic_System_1984_(WGS_84)
@@ -35,7 +37,9 @@ geodetic_to_ecef_coordinates(Longitude, Latitude, Altitude) ->
     Z  = (B2 / A2 * N + Altitude) * SLatitude,
     {X, Y, Z}.
 
+%%
 %% Exported: meters_per_pixel
+%%
 
 %% https://groups.google.com/g/google-maps-js-api-v3/c/hDRO4oHVSeM?pli=1
 
@@ -44,13 +48,17 @@ meters_per_pixel({_Longitude, Latitude}, Zoom) ->
 meters_per_pixel(Latitude, Zoom) ->
     156543.03392 * math:cos(Latitude * ?PI / 180) / math:pow(2, Zoom).
 
+%%
 %% Exported: distance
+%%
 
 %% Note: We should use https://en.wikipedia.org/wiki/Haversine_formula
 distance(X1, Y1, X2, Y2) ->
     math:sqrt(math:pow(X2 - X1, 2) + math:pow(Y2 - Y1, 2)).
 
+%%
 %% Exported: get_corners
+%%
 
 %% https://developers.google.com/maps/documentation/javascript/coordinates
 %% https://stackoverflow.com/questions/12507274/how-to-get-bounds-of-a-google-static-map

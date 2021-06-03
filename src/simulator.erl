@@ -11,7 +11,9 @@
 -define(IS_SOURCE, 2).
 -define(IS_TARGET, 3).
 
+%%
 %% Exported: initialize
+%%
 
 initialize(MinLongitude, MaxLongitude,
            MinLatitude, MaxLatitude,
@@ -20,7 +22,9 @@ initialize(MinLongitude, MaxLongitude,
                              MinLatitude, MaxLatitude,
                              NeighbourDistance).
 
+%%
 %% Exported: add_players
+%%
 
 add_players([]) ->
     ok;
@@ -31,7 +35,9 @@ add_players(NewPlayers) ->
                   end, NewPlayers),
     simulator_nif:add_players(ConvertedNewPlayers).
 
+%%
 %% Exported: update_players
+%%
 
 update_players([]) ->
     ok;
@@ -66,7 +72,9 @@ convert_updated_values([{pick_mode, {is_target, _}}|Rest]) ->
 convert_updated_values([UpdatedValue|Rest]) ->
     [UpdatedValue|convert_updated_values(Rest)].
 
+%%
 %% Exported: nplayer
+%%
 
 nplayer(DefaultValue) ->
     case os:getenv("NPLAYER") of
@@ -76,7 +84,9 @@ nplayer(DefaultValue) ->
             ?l2i(ToString)
     end.
 
+%%
 %% Exported: scale_factor
+%%
 
 scale_factor() ->
     case os:getenv("SCALEFACTOR") of
@@ -86,7 +96,9 @@ scale_factor() ->
             ?l2i(ScaleFactorString)
     end.
 
+%%
 %% Exported: send_messages
+%%
 
 send_messages(Players, ScaleFactor, TargetNym, ResendTime) ->
     lists:foreach(

@@ -12,12 +12,16 @@
 -define(RESEND_TIME, (60000 * 4)).
 -define(TARGET_NYM, <<"p88">>).
 
+%%
 %% Exported: get_location
+%%
 
 get_location() ->
     simulator_location:get(?LOCATION).
 
+%%
 %% Exported: get_location_index
+%%
 
 get_location_index() ->
     N = simulator:nplayer(?DEFAULT_MESH_SIZE),
@@ -37,7 +41,9 @@ get_location_index() ->
 mesh_point(I, J) ->
     iolist_to_binary(io_lib:format("p~w~w", [I, J])).
 
+%%
 %% Exported: get_location_generator
+%%
 
 get_location_generator({Longitude, Latitude, Timestamp, TimeStep}) ->
     fun() ->
@@ -47,7 +53,9 @@ get_location_generator({Longitude, Latitude, Timestamp, TimeStep}) ->
                {Longitude, Latitude, NextTimestamp, TimeStep})}
     end.
 
+%%
 %% Exported: neighbour_distance
+%%
 
 neighbour_distance() ->
     N = simulator:nplayer(?DEFAULT_MESH_SIZE),
@@ -58,7 +66,9 @@ neighbour_distance() ->
     DeltaLatitude = (MaxLatitude - MinLatitude) / (N + 2),
     max(DeltaLongitude, DeltaLatitude) * 1.1.
 
+%%
 %% Exported: send_simulated_messages
+%%
 
 send_simulated_messages(Players) ->
     N = simulator:nplayer(?DEFAULT_MESH_SIZE),
@@ -72,7 +82,9 @@ send_simulated_messages(Players, ?DEFAULT_MESH_SIZE) ->
 send_simulated_messages(_Players, _N) ->
     ok.
 
+%%
 %% Exported: center_target
+%%
 
 center_target() ->
     false.

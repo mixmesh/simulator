@@ -39,7 +39,9 @@
 -define(DEFAULT_FORMAT, argb).
 -define(DEFAULT_INTERVAL, 2000).
 
+%%
 %% Exported: start_link
+%%
 
 start_link() ->
     application:ensure_all_started(epx),
@@ -47,7 +49,9 @@ start_link() ->
                        fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
+%%
 %% Exported: stop
+%%
 
 stop() ->
     serv:call(?MODULE, stop).

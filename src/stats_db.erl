@@ -9,7 +9,9 @@
 -include_lib("apptools/include/shorthand.hrl").
 -include("stats_db.hrl").
 
+%%
 %% Exported: new
+%%
 
 new() ->
     ?MODULE = ets:new(?MODULE, [public, named_table,
@@ -19,7 +21,9 @@ new() ->
     true = ets:insert(?MODULE, {messages_overwritten, 0}),
     ets:insert(?MODULE, {start_time, Timestamp}).
 
+%%
 %% Exported: message_create
+%%
 
 message_created(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
@@ -29,7 +33,9 @@ message_created(MessageMD5, SenderNym, RecipientNym) ->
                {{message_created, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
 
+%%
 %% Exported: message_duplicate_received
+%%
 
 message_duplicate_received(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
@@ -39,7 +45,9 @@ message_duplicate_received(MessageMD5, SenderNym, RecipientNym) ->
                {{message_duplicate_received, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
 
+%%
 %% Exported: message_received
+%%
 
 message_received(MessageMD5, SenderNym, RecipientNym) ->
     Timestamp = os:system_time(millisecond),
@@ -49,24 +57,32 @@ message_received(MessageMD5, SenderNym, RecipientNym) ->
                {{message_received, MessageMD5}, Timestamp, SenderNym,
                 RecipientNym}).
 
+%%
 %% Exported: messages_relayed
+%%
 
 messages_relayed(N) ->
     [{_, M}] = ets:lookup(?MODULE, messages_relayed),
     ets:insert(?MODULE, {messages_relayed, N + M}).
 
+%%
 %% Exported: messages_overwritten
+%%
 
 messages_overwritten(N) ->
     [{_, M}] = ets:lookup(?MODULE, messages_overwritten),
     ets:insert(?MODULE, {messages_overwritten, N + M}).
 
+%%
 %% Exported: dump
+%%
 
 dump() ->
     ets:tab2list(?MODULE).
 
+%%
 %% Exported: save
+%%
 
 save() ->
     save("/home/jocke/tmp/dump.dets").

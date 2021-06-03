@@ -14,14 +14,18 @@
          players :: [{#player{}, [#player{}]}],
          neighbour_distance :: number()}).
 
+%%
 %% Exported: start_link
+%%
 
 start_link() ->
     ?spawn_server_opts(fun init/1,
                        fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
+%%
 %% Exported: stop
+%%
 
 stop() ->
     serv:call(?MODULE, stop).

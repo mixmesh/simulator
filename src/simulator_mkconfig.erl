@@ -3,7 +3,9 @@
 
 -include_lib("apptools/include/shorthand.hrl").
 
+%%
 %% Exported: start
+%%
 
 -spec start([string()]) -> no_return().
 

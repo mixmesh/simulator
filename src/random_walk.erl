@@ -13,12 +13,16 @@
 -define(RESEND_TIME, (60000 * 4)).
 -define(TARGET_NYM, <<"p1">>).
 
+%%
 %% Exported: get_location
+%%
 
 get_location() ->
     simulator_location:get(?LOCATION).
 
+%%
 %% Exported: get_location_index
+%%
 
 get_location_index() ->
     To = simulator:nplayer(?DEFAULT_NUMBER_OF_PLAYERS),
@@ -79,7 +83,9 @@ noise(Travel, Step, A, B) ->
 smoothstep(A, B, W) ->
     (B - A) * (3.0 - W * 2.0) * W * W + A.
 
+%%
 %% Exported: get_location_generator
+%%
 
 get_location_generator(
   {ScaleFactor,
@@ -139,13 +145,17 @@ maybe_change_direction(MinCoordinate, Coordinate, Direction, Movement, Side) ->
             {Coordinate + NewDirection * Movement, NewDirection}
     end.
 
+%%
 %% Exported: neighbour_distance
+%%
 
 neighbour_distance() ->
     Location = get_location(),
     Location#simulator_location.neighbour_distance_in_degrees.
 
+%%
 %% Exported: send_simulated_messages
+%%
 
 send_simulated_messages(Players) ->
     ScaleFactor = simulator:scale_factor(),
@@ -153,7 +163,9 @@ send_simulated_messages(Players) ->
                       simulator, send_messages,
                       [Players, ScaleFactor, ?TARGET_NYM, ?RESEND_TIME]).
 
+%%
 %% Exported: center_target
+%%
 
 center_target() ->
     {true, ?TARGET_NYM}.

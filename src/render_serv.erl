@@ -14,7 +14,9 @@
 
 -define(UPDATE_TIME, 500).
 
+%%
 %% Exported: start_link
+%%
 
 start_link() ->
     SimulatorModule = config:lookup([simulator, 'data-set']),
@@ -26,7 +28,9 @@ start_link() ->
                        fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
+%%
 %% Exported: stop
+%%
 
 stop() ->
     serv:call(?MODULE, stop).

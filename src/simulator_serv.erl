@@ -44,50 +44,68 @@
          players :: [#player{}],
          k :: integer()}).
 
+%%
 %% Exported: start_link
+%%
 
 start_link() ->
     ?spawn_server_opts(fun init/1,
                        fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
+%%
 %% Exported: stop
+%%
 
 stop() ->
     serv:call(?MODULE, stop).
 
+%%
 %% Exported: elect_source_and_target
+%%
 
 elect_source_and_target(MessageMD5, SourceNym, TargetNym) ->
     serv:cast(?MODULE,
               {elect_source_and_target, MessageMD5,  SourceNym, TargetNym}).
 
+%%
 %% Exported: get_players
+%%
 
 get_players() ->
     serv:call(?MODULE, get_players).
 
+%%
 %% Exported: get_player_nyms
+%%
 
 get_player_nyms(SyncAddresses) ->
     serv:call(?MODULE, {get_player_nyms, SyncAddresses}).
 
+%%
 %% Exported: get_random_player
+%%
 
 get_random_player(Nym) ->
     serv:call(?MODULE, {get_random_player, Nym}).
 
+%%
 %% Exported: target_received_message
+%%
 
 target_received_message(TargetNym, SourceNym) ->
     serv:cast(?MODULE, {target_received_message, TargetNym, SourceNym}).
 
+%%
 %% Exported: received_message
+%%
 
 received_message(TargetNym, SourceNym) ->
     serv:cast(?MODULE, {received_message, TargetNym, SourceNym}).
 
+%%
 %% Exported: analyze
+%%
 
 analyze() ->
     serv:cast(?MODULE, analyze).
