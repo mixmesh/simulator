@@ -45,9 +45,9 @@
 
 start_link() ->
     application:ensure_all_started(epx),
-    ?spawn_server_opts(fun init/1,
-                       fun ?MODULE:message_handler/1,
-                       #serv_options{name = ?MODULE}).
+    ?spawn_server(fun init/1,
+                  fun ?MODULE:message_handler/1,
+                  #serv_options{name = ?MODULE}).
 
 %%
 %% Exported: stop
@@ -154,7 +154,7 @@ message_handler(S=#state{parent = Parent }) ->
 	    %% draw neighbour connections
 	    Pos0 = S#state.pos0,
 	    Pos1 = S#state.pos1,
-            
+
 	    player_db:foldl(
 	      fun(#db_player{nym=Nym,neighbours=Ns}, _Acc) ->
 		      {X0,Y0} = interp(Nym,T,Pos0,Pos1),
@@ -174,7 +174,7 @@ message_handler(S=#state{parent = Parent }) ->
 				Yj = Ky*Y1 - Cy,
 				Cnt = count(Nym,N),
 				SegLen = 5,
-				draw_dashed(Px, Xi, Yi, Xj, Yj, Cnt, 
+				draw_dashed(Px, Xi, Yi, Xj, Yj, Cnt,
 					    SegLen, 0.0);
 			   ({N,up,accept}) ->
 				epx_gc:set_fill_color(red),
@@ -183,7 +183,7 @@ message_handler(S=#state{parent = Parent }) ->
 				Yj = Ky*Y1 - Cy,
 				Cnt = count(Nym,N),
 				SegLen = 5,
-				draw_dashed(Px, Xj, Yj, Xi, Yi, Cnt, 
+				draw_dashed(Px, Xj, Yj, Xi, Yi, Cnt,
 					    SegLen, 0.5);
 			   ({N,pending,_}) ->
 				epx_gc:set_foreground_color(lightgray),
@@ -217,7 +217,7 @@ message_handler(S=#state{parent = Parent }) ->
 			      epx_gc:set_fill_color(blue)
 		      end,
 		      epx:draw_ellipse(Px, X-4, Y-4, 8, 8),
-		      String = 
+		      String =
 			  if Count =:= 0; Count =:= not_set ->
 				  binary_to_list(Nym);
 			     true ->
@@ -321,7 +321,7 @@ draw_arrow(Px, X1, Y1, X2, Y2, {{Ad1x,Ad1y},{Ad2x,Ad2y}}) ->
     P1 = {X1-Ad1x, Y1-Ad1y},
     P2 = {X1-Ad2x, Y1-Ad2y},
     epx:draw_triangle(Px, P0, P1, P2).
-    
+
 
 %% Get target positions
 get_positions() ->

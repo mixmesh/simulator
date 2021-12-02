@@ -24,9 +24,9 @@ start_link() ->
         SimulatorModule:get_location(),
     NeighbourDistance = SimulatorModule:neighbour_distance(),
     ok = simulator:initialize(MinX, MaxX, MinY, MaxY, NeighbourDistance),
-    ?spawn_server_opts(fun(Parent) -> init(Parent, SimulatorModule) end,
-                       fun ?MODULE:message_handler/1,
-                       #serv_options{name = ?MODULE}).
+    ?spawn_server(fun(Parent) -> init(Parent, SimulatorModule) end,
+                  fun ?MODULE:message_handler/1,
+                  #serv_options{name = ?MODULE}).
 
 %%
 %% Exported: stop

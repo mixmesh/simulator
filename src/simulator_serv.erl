@@ -49,9 +49,9 @@
 %%
 
 start_link() ->
-    ?spawn_server_opts(fun init/1,
-                       fun ?MODULE:message_handler/1,
-                       #serv_options{name = ?MODULE}).
+    ?spawn_server(fun init/1,
+                  fun ?MODULE:message_handler/1,
+                  #serv_options{name = ?MODULE}).
 
 %%
 %% Exported: stop
@@ -126,7 +126,7 @@ init(Parent) ->
     true = stats_db:new(),
     %% FIXME: find a place
     %% ets:new(endpoint_reg,[public, named_table, {write_concurrency, true}]),
-    
+
     %% Start simulated players
     LocationIndex = SimulatorModule:get_location_index(),
     AllPlayers =
@@ -196,7 +196,7 @@ init(Parent) ->
     lists:foreach(fun(#player{player_serv_pid = PlayerServPid}) ->
                           player_serv:start_location_updating(PlayerServPid)
                   end, AllPlayers),
-    %% Should we put a player in the center of the area?    
+    %% Should we put a player in the center of the area?
     case SimulatorModule:center_target() of
         {true, Nym} ->
             {found, #player{player_serv_pid = PlayerServPid}} =
